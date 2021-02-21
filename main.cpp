@@ -7,18 +7,8 @@
 #include <math.h>
 #include <time.h>
 #include <curses.h>
-
-// function protypes
-int printBoard (char[32][32], int = 9, int = 9, bool = 0, chtype = (chtype)'X' | COLOR_PAIR(3), chtype = (chtype)'P' | COLOR_PAIR(3));
-int initializeMines (char[32][32], int = 9, int = 9, int = 10);
-int overlayMines (char[32][32], char[32][32]);
-int numMines (char[32][32], int, int);
-int openSquares (char[32][32], char[32][32], int, int, int = 9, int = 9);
-bool allClear (char[32][32], char[32][32], int = 9, int = 9);
-int game (int = 9, int = 9, int = 10); // returns 0 on game failure, 1 on success, 2 on manual exit, 3 on restart
-int menu (); // returns 0 on no input, 1 on restart, 2 on exit, 3 on debug
-int tutorial ();
-int printCtrls (int = 3, int = 29);
+#include "boardfunctions.h"
+#include "splash.h"
 
 int main (int argc, char* argv[]) {
 	bool gotInput = 0;	// received command line arguments from user
@@ -35,40 +25,7 @@ int main (int argc, char* argv[]) {
 	mousemask (ALL_MOUSE_EVENTS, &old);
 	// a ridiculously long string:
 	{
-		addstr ("\
-                ____  ____             ____  ____  ___   ____  ___\n\
-|\\  /| | |\\  | |     |     \\        / |     |     |   \\ |     |   \\\n\
-| \\/ | | | \\ | |____ |___   \\  /\\  /  |____ |____ |___/ |____ |___/\n\
-|    | | |  \\| |____  ___|   \\/  \\/   |____ |____ |     |____ |   \\\n\
-\n\
-====================== LINUX CONSOLE EDITION ======================\n\
-         :::-------- Press any key to start... --------:::\n\
-                        .\n\
-                        |\\\n\
-                        |\\\\       /\\               .\n\
-          .             | \\\\.____/__\\____.        /|\n\
-          |\\.       ,--:|  \\\\#############\\.    .//|\n\
-          | \\\\.   ,/  ''|   \\\\\"\"\"\"\"\"\"\"\"#####'\\ //  /\n\
-          \\  '\\\\./'                /\\  \"\"\"\"##'//   /\n\
-           \\   \\/                 /  \\     \"//'   /\n\
-            \\ ./                 /    \\          /|.\n\
-             .|       ._____                     '|.\n\
-            .|'        \\\"\"\"                        |.\n\
-            |'          \\              ==__        '|\n\
-          __|...===:                   ''__:>       |==__\n\
-        <:___''''''                    --           |''__:>\n\
-            |'''---_        ..      ..             .|--\n\
-            '|               \\\\    //          .. .|'\n\
-             |.               \\\\  //            \\\\|'\n\
-              \\.               \\\\//        ..    \\\\\n\
-               /\\       .       \\/           ':-. \\\\\n\
-              / ,'.     |      /            ./.  '--\\\n\
-             /-'   '--__|.    /_________---'-.\\\n\
-                         |    /                '\n\
-                         |.  /\n\
-                          | /\n\
-                          |/\n\
-                          '");
+		addstr (SPLASH);
 	}
 	// the above looks best once the program is actually run
 	curs_set (0);
