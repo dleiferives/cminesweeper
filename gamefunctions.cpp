@@ -118,8 +118,8 @@ int initializeMines (Board * mines) {
 /* overlays mines on game board */
 int overlayMines (Board mines, Board * board) {
 	int x, y;
-	for (y = 1; y < mines.height - 1; y++) {
-		for (x = 1; x < mines.width - 1; x++) {
+	for (y = 1; y < mines.height + 2; y++) {
+		for (x = 1; x < mines.width + 2; x++) {
 			if (mines.array[x][y] == 'X') {
 				switch (board->array[x][y]) {
 				case 'P':
@@ -246,6 +246,7 @@ int menu () {
 
 		buf = (wgetch (stdscr));
 		switch (buf) {
+		case 'q':
 		case 27: /* key code for Esc */
 			option = MENU_NO_INPUT;
 			gotInput = true;
