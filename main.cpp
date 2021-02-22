@@ -13,6 +13,12 @@
 #include "splash.h"
 #include "board.h"
 
+#define ACTION_NONE 	0
+#define ACTION_BOARD_OP	1
+#define ACTION_CHG_MODE	2
+#define ACTION_ESCAPE	3
+#define ACTION_INC_TIME	4
+
 int main (int argc, char* argv[]) {
 	bool gotInput = 0;	// received command line arguments from user
 	int exitCode = 1;	// status returned by game ()
@@ -396,16 +402,12 @@ int game(int yDim, int xDim, int qtyMines) {
 	Board vMem = {.width = xDim, .height = yDim, .mineCount = qtyMines};
 	initBoardArray (&vMem);
 
-	char op = 0, action = 0;
+	/* variable to store whether the user uses the primary or secondary button */
+	uint8_t op = 0;
+	uint8_t action = ACTION_NONE;
 	long secsLastLoop = 0;
 	long timeOffset = 0;
 	long menuTime;
-	// char action:
-	// 0 null
-	// 1 board operation
-	// 2 change mode
-	// 3 escape
-	// 4 increment time
 	int buf = -1;
 	int flagsPlaced = 0;
 	
@@ -468,7 +470,7 @@ int game(int yDim, int xDim, int qtyMines) {
 			return 2;
 		}
 
-		action = 0;
+		action = ACTION_NONE;
 		setBreak = 0;
 		gotInput = 0;
 		op = 0;
@@ -490,17 +492,17 @@ int game(int yDim, int xDim, int qtyMines) {
 			while (buf < 0) { // until valid input
 				buf = wgetch(stdscr);
 				if (clock() - secsLastLoop > CLOCKS_PER_SEC) {
-					action = 4;
+					action = ACTION_INC_TIME;
 					gameDur = ((float)(clock() - timeOffset)) / CLOCKS_PER_SEC;
 					break;
 				}
 			}
 
-			if (action == 4) break;
+			if (action == ACTION_INC_TIME) break;
 
 			switch (buf) {
 			case 27: // esc
-				action = 3;
+				action = ACTION_ESCAPE;
 				gotInput = 1;
 				break;
 			case KEY_MOUSE:
@@ -508,29 +510,29 @@ int game(int yDim, int xDim, int qtyMines) {
 				cx = m_event.x;
 				cy = m_event.y;
 				if (m_event.bstate & BUTTON1_CLICKED) {
-					action = 1;
+					action = ACTION_BOARD_OP;
 					op = 1;
 				}
 				if (m_event.bstate & BUTTON3_CLICKED) {
-					action = 1;
+					action = ACTION_BOARD_OP;
 					op = 2;
 				}
 				gotInput = 1;
 				break;
 			case 'm':
-				action = 2;
+				action = ACTION_CHG_MODE;
 				gotInput = 1;
 				break;
 			case 'z':
 			case '/':
 				op = 1;
-				action = 1;
+				action = ACTION_BOARD_OP;
 				gotInput = 1;
 				break;
 			case 'x':
 			case '\'':
 				op = 2;
-				action = 1;
+				action = ACTION_BOARD_OP;
 				gotInput = 1;
 				break;
 			case 'r':
@@ -538,11 +540,11 @@ int game(int yDim, int xDim, int qtyMines) {
 			case 10: // enter
 				getyx(stdscr, cy, cx);
 				op = 1;
-				action = 1;
+				action = ACTION_BOARD_OP;
 				gotInput = 1;
 				break;
 			case 32: // space
-				action = 2;
+				action = ACTION_CHG_MODE;
 				gotInput = 1;
 				break;
 			case KEY_UP:
@@ -714,7 +716,7 @@ int game(int yDim, int xDim, int qtyMines) {
 			timeOffset += clock() - menuTime;
 			switch (buf) {
 			case 0:
-				action = 3;
+				action = ACTION_ESCAPE;
 				break;
 			case 1:
 				freeBoardArray (&mines);
@@ -739,7 +741,7 @@ int game(int yDim, int xDim, int qtyMines) {
 
 	freeBoardArray (&mines);
 	freeBoardArray (&vMem);
-	if (action == 3) return 2;
+	if (action == ACTION_ESCAPE) return 2;
 	else return isAlive;
 }
 
