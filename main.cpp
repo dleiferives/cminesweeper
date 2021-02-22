@@ -466,7 +466,8 @@ int game (int yDim, int xDim, int qtyMines) {
 			/* toggle flag mode */
 			isFlagMode = !isFlagMode;
 			break;
-		case ACTION_ESCAPE: /* open the pause menu */
+		case ACTION_ESCAPE:
+			/* open the pause menu */
 			menuTime = clock ();
 			printBlank (yDim, xDim);
 			buf = menu ();

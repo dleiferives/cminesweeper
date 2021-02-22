@@ -44,7 +44,7 @@ int printBoard (Board board, bool hide, chtype mineChar, chtype flagChar) {
 				}
 				else switch (board.array[x][y]) {
 				case '+':
-					addch ('+' | COLOR_PAIR (1));
+					addch ('+' | COLOR_PAIR (0));
 					break;
 				case 'X':
 					addch (mineChar);
@@ -238,8 +238,8 @@ int menu () {
 
 		/* draw option pointer */
 		for (int x = 0; x < 4; x++) {
-			if (option == x) mvprintw (2 + x, 5, ">");
-			else mvprintw (2 + x, 5, " ");
+			if (option == x) mvaddch (2 + x, 5, '>' | A_BLINK);
+			else mvaddch (2 + x, 5, ' ');
 		}
 
 		refresh ();
@@ -396,11 +396,11 @@ int printCtrls (int y, int x) {
 	int cy, cx;
 	getyx (stdscr, cy, cx);
 	mvaddstr (y++, x, "+============= Controls =============+\n");
-	mvaddstr (y++, x, "|Arrow Keys: navigate the field      |\n");
-	mvaddstr (y++, x, "|  Z, Enter: primary select button   |\n");
-	mvaddstr (y++, x, "|         X: secondary select button |\n");
-	mvaddstr (y++, x, "|  M, Space: toggle flagging mode    |\n");
-	mvaddstr (y++, x, "|       Esc: pause menu              |\n");
+	mvaddstr (y++, x, "| W A S D  : navigate the field      |\n");
+	mvaddstr (y++, x, "| /  MOUSE1: primary select button   |\n");
+	mvaddstr (y++, x, "| '  MOUSE2: secondary select button |\n");
+	mvaddstr (y++, x, "| M  Space : toggle flagging mode    |\n");
+	mvaddstr (y++, x, "| Q  Esc   : pause game              |\n");
 	mvaddstr (y++, x, "+====================================+");
 	move (cy, cx);
 
