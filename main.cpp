@@ -1,4 +1,4 @@
-// main.cpp
+/* main.cpp */
 
 #include <string.h>
 #include <stdio.h>
@@ -13,20 +13,16 @@
 #include "splash.h"
 #include "board.h"
 
-#define ACTION_NONE 	0
-#define ACTION_BOARD_OP	1
-#define ACTION_CHG_MODE	2
-#define ACTION_ESCAPE	3
-#define ACTION_INC_TIME	4
-
 int main (int argc, char* argv[]) {
-	bool gotInput = 0;	// received command line arguments from user
-	int exitCode = 1;	// status returned by game ()
+	/* if the user provided command line arguments */
+	bool gotInput = false;
+	/* status returned by game () */
+	int exitCode = 1;
 	int input = 0;		
 	int xDim = 9, yDim = 9, qtyMines = 10;
-	srand (time(0));
+	srand (time (0));
 	initscr ();
-	keypad (stdscr, 1);
+	keypad (stdscr, true);
 	noecho ();
 	
 	clear ();
@@ -43,10 +39,10 @@ int main (int argc, char* argv[]) {
 		xDim = atoi (argv[argc - 3]);
 		yDim = atoi (argv[argc - 2]);
 		qtyMines = atoi (argv[argc - 1]);
-		gotInput = 1;
+		gotInput = true;
 	}
-	//gotInput = 1;
 
+	/* set upper and lower limits for acceptable dimensions */
 	if (xDim < 1)
 		xDim = 1;
 	if (xDim > 30)
@@ -86,8 +82,9 @@ int main (int argc, char* argv[]) {
 			yDim = 24;
 			qtyMines = 99;
 			break;
-		//case '4':
-		//	break;
+		// case '4':
+		// 	break;
+		case 'q':
 		case 27:
 			exitCode = -1;
 			break;
@@ -99,19 +96,22 @@ int main (int argc, char* argv[]) {
 		}
 	}
 
-	while (0 <= exitCode && exitCode <= 4) { // the four valid exit codes
-		clear();
+	/* do while exitCode is one of the 4 valid values */
+	while (0 <= exitCode && exitCode <= 4) {
+		clear ();
 		exitCode = game (yDim, xDim, qtyMines);
-		if (exitCode == 0 || exitCode == 1) { // won or lost
-			echo();
+		if (exitCode == 0 || exitCode == 1) {
+			/* if playe won or lost */
+			echo ();
 			mvprintw (10, 70, "Play again? (Y/N)");
 			mvprintw (11, 70, ">");
 			input = toupper (wgetch (stdscr));
 			
 			if (input == 'N') break;
 		}
-		if (exitCode == 2) { // manual exit
-			echo();
+		if (exitCode == 2) {
+			/* if player exited manually */
+			echo ();
 			mvprintw (10, 70, "Game closed. Exit now? (Y/N)");
 			mvprintw (11, 70, ">");
 			input = toupper (wgetch (stdscr));
@@ -123,15 +123,20 @@ int main (int argc, char* argv[]) {
 	return 0;
 }
 
-int game(int yDim, int xDim, int qtyMines) {
-	int x = 0, y = 0; // vars for array navigation
+int game (int yDim, int xDim, int qtyMines) {
+	/* used for array reading/writing */
+	int x = 0, y = 0;
 	int h, k;
-	int cx = 5, cy = 3; // vars for console navigation: initialized at top left of game board
+	/* used for console navigation: initialized at top left of game board */
+	int cx = 5, cy = 3;
+	/* mouse event */
 	MEVENT m_event;
-	bool isFlagMode = 0, gotInput = 0; // flags
-	bool isAlive = 1, exitGame = 0;
-	bool firstClick = 0;
-	bool setBreak = 0;
+	/* bools storing info about the game state */
+	bool isFlagMode = false, gotInput = false;
+	bool isAlive = true, exitGame = false;
+	bool firstClick = false;
+	bool setBreak = false;
+	/* game duration */
 	double gameDur = 0;
 
 	Board mines = {.width = xDim, .height = yDim, .mineCount = qtyMines};
@@ -139,58 +144,62 @@ int game(int yDim, int xDim, int qtyMines) {
 	Board vMem = {.width = xDim, .height = yDim, .mineCount = qtyMines};
 	initBoardArray (&vMem);
 
-	/* variable to store whether the user uses the primary or secondary button */
+	/* stores whether the user used the primary or secondary button */
 	uint8_t op = 0;
+	/* stores what action will be performed by the game */
 	uint8_t action = ACTION_NONE;
+	/* variables for timekeeping */
 	long secsLastLoop = 0;
 	long timeOffset = 0;
 	long menuTime;
+
 	int buf = -1;
 	int flagsPlaced = 0;
 	
-	// initialize colors
-	init_pair(1, COLOR_WHITE, COLOR_BLACK); // default pair
-	init_pair(2, COLOR_BLACK, COLOR_WHITE); // inverted default
-	init_pair(3, COLOR_RED,   COLOR_BLACK); // for exploded mines and wrong flags
-	init_pair(4, COLOR_GREEN, COLOR_BLACK); // for correct flags and unexploded mines
-	init_pair(5, COLOR_CYAN,  COLOR_BLACK); // for numbers
+	/* initialize colors */
+	init_pair (1, COLOR_WHITE, COLOR_BLACK);	/* default pair */
+	init_pair (2, COLOR_BLACK, COLOR_WHITE);	/* inverted default */
+	init_pair (3, COLOR_RED,   COLOR_BLACK);	/* for exploded mines and wrong flags */
+	init_pair (4, COLOR_GREEN, COLOR_BLACK);	/* for correct flags and unexploded mines */
+	init_pair (5, COLOR_CYAN,  COLOR_BLACK);	/* for numbers */
 
-	// initialize array of elements to be displayed
+	/* initialize array of elements to be displayed */
 	for (y = 0; y < vMem.height + 2; y++) {
 		for (x = 0; x < vMem.width + 2; x++) {
 			vMem.array[x][y] = '+';
 		}
 	}
 
-	//now begin gameplay
-	noecho();
-	clear();
-	initializeMines(&mines);
-	secsLastLoop = clock();
+	/* now begin gameplay */
+	noecho ();
+	clear ();
+	initializeMines (&mines);
+	secsLastLoop = clock ();
 
 	while (isAlive) {
-		move(0, 0);
-		addstr("+= Minesweeper ");
-		for (x = 4; x < xDim; x++) addstr("==");
-		addstr("=+\n");
+		move (0, 0);
+		addstr ("+= Minesweeper ");
+		for (x = 4; x < xDim; x++) addstr ("==");
+		addstr ("=+\n");
 		
-		if (allClear(mines, vMem)) { // only if player has won
+		if (allClear (mines, vMem)) {
+			/* only if player has won */
 			overlayMines (mines, &vMem);
-			printBoard(vMem, false, (chtype)'F' | COLOR_PAIR(4));
-			printCtrls(0, 70);
-			addstr("+==============");
-			for (x = 4; x < xDim; x++) addstr("==");
-			mvaddstr(8, 70, "You won!\n");
+			printBoard (vMem, false, (chtype)'F' | COLOR_PAIR (4));
+			printCtrls (0, 70);
+			addstr ("+==============");
+			for (x = 4; x < xDim; x++) addstr ("==");
+			mvaddstr (8, 70, "You won!\n");
 			mvprintw (9, 70, "Time: %.3f\n", gameDur);
-			refresh();
+			refresh ();
 			break;
 		}
 		else {
-			printBoard(vMem);
-			printCtrls(0, 70);
-			addstr("+==============");
-			for (x = 4; x < xDim; x++) addstr("==");
-			addstr("=+\n");
+			printBoard (vMem);
+			printCtrls (0, 70);
+			addstr ("+==============");
+			for (x = 4; x < xDim; x++) addstr ("==");
+			addstr ("=+\n");
 		}
 
 		mvprintw (8, 70, "Flags placed: %02d/%02d", flagsPlaced, qtyMines);
@@ -198,8 +207,7 @@ int game(int yDim, int xDim, int qtyMines) {
 		if (isFlagMode) printw ("Flag   | ");
 		else printw ("Normal | ");
 		if (!firstClick) gameDur = 0;
-		//printw ("firstclick=%d | offset = %ld ", firstClick, timeOffset);
-		printw ("Time: %03d", (int)floorf(gameDur));
+		printw ("Time: %03d", (int)floorf (gameDur));
 		
 		if (exitGame) {
 			freeBoardArray (&mines);
@@ -208,8 +216,8 @@ int game(int yDim, int xDim, int qtyMines) {
 		}
 
 		action = ACTION_NONE;
-		setBreak = 0;
-		gotInput = 0;
+		setBreak = false;
+		gotInput = false;
 		op = 0;
 
 		move (cy, cx);
@@ -219,18 +227,21 @@ int game(int yDim, int xDim, int qtyMines) {
 			secsLastLoop = clock ();
 		}
 
-		// This loop is responsible for gathering user input.
-		// The loop will be interrupted every time that one second passes to refresh the screen.
-		curs_set (2); // cursor very visible
+		/* set cursor to very visible */
+		curs_set (2);
 		nodelay (stdscr, 1);
 
-		while (!gotInput) { // arrow key input
+		/* This loop is responsible for taking user input.
+		   The loop will be interrupted every time that one second passes to refresh the screen. */
+		while (!gotInput) {
+			/* arrow key input */
 			buf = -1;
-			while (buf < 0) { // until valid input
-				buf = wgetch(stdscr);
-				if (clock() - secsLastLoop > CLOCKS_PER_SEC) {
+			while (buf < 0) {
+				/* do until valid input is received */
+				buf = wgetch (stdscr);
+				if (clock () - secsLastLoop > CLOCKS_PER_SEC) {
 					action = ACTION_INC_TIME;
-					gameDur = ((float)(clock() - timeOffset)) / CLOCKS_PER_SEC;
+					gameDur = ((float)(clock () - timeOffset)) / CLOCKS_PER_SEC;
 					break;
 				}
 			}
@@ -238,12 +249,13 @@ int game(int yDim, int xDim, int qtyMines) {
 			if (action == ACTION_INC_TIME) break;
 
 			switch (buf) {
-			case 27: // esc
+			case 'q':
+			case 27: /* key code for Esc */
 				action = ACTION_ESCAPE;
-				gotInput = 1;
+				gotInput = true;
 				break;
 			case KEY_MOUSE:
-				getmouse(&m_event);
+				getmouse (&m_event);
 				cx = m_event.x;
 				cy = m_event.y;
 				if (m_event.bstate & BUTTON1_CLICKED) {
@@ -254,35 +266,35 @@ int game(int yDim, int xDim, int qtyMines) {
 					action = ACTION_BOARD_OP;
 					op = 2;
 				}
-				gotInput = 1;
+				gotInput = true;
 				break;
 			case 'm':
 				action = ACTION_CHG_MODE;
-				gotInput = 1;
+				gotInput = true;
 				break;
 			case 'z':
 			case '/':
 				op = 1;
 				action = ACTION_BOARD_OP;
-				gotInput = 1;
+				gotInput = true;
 				break;
 			case 'x':
 			case '\'':
 				op = 2;
 				action = ACTION_BOARD_OP;
-				gotInput = 1;
+				gotInput = true;
 				break;
 			case 'r':
 				return 3;
-			case 10: // enter
-				getyx(stdscr, cy, cx);
+			case 10: /* key code for Return */
+				getyx (stdscr, cy, cx);
 				op = 1;
 				action = ACTION_BOARD_OP;
-				gotInput = 1;
+				gotInput = true;
 				break;
-			case 32: // space
+			case 32: /* key code for space */
 				action = ACTION_CHG_MODE;
-				gotInput = 1;
+				gotInput = true;
 				break;
 			case KEY_UP:
 			case 'w':
@@ -301,12 +313,13 @@ int game(int yDim, int xDim, int qtyMines) {
 				if (5 <= cx && cx <= 2 * xDim + 1) cx += 2;
 				break;
 			}
-			move(cy, cx);
-			refresh();
+			move (cy, cx);
+			refresh ();
 		}
 
 		nodelay (stdscr, 0);
-		curs_set (1); // cursor mildly visible
+		/* set cursor to mildly visible */
+		curs_set (1);
 
 		cx = (cx % 2 == 0)
 			? cx - 1
@@ -314,45 +327,47 @@ int game(int yDim, int xDim, int qtyMines) {
 		x = (cx - 2) / 2;
 		y = cy - 2;
 
-		// this is to make sure that the player does not die on the first move
+		/* make sure that the player does not die on the first move */
 		buf = 0;
 		if (!firstClick) {
 			while (numMines (mines, x, y) > 0 || mines.array[x][y] == 'X') {
-				initializeMines(&mines);
+				initializeMines (&mines);
 				buf++;
 				if (buf > 100) break;
 			}
 			if (buf > 100) {
 				mines.mineCount++;
-				initializeMines(&mines);
+				initializeMines (&mines);
 				if (mines.array[x][y] == 'X')	mines.array[x][y] = '.';
 			}
 		}
 
-		if (gotInput && action != 2 && action != 3) firstClick = 1;
+		if (gotInput && action != ACTION_CHG_MODE && action != ACTION_ESCAPE) firstClick = true;
 		
-		// This switch is responsible for handling the user input gathered in the beginning.
+		/* This switch is responsible for handling the user input gathered in the beginning. */
 		switch (action) {
-		case 1: // if board operation
-			if (0 <= x && x <= xDim + 1 && 0 <= y && y <= yDim + 1) { // selection is made inside game board 
-				if (mines.array[x][y] == 'X' && vMem.array[x][y] != 'P') { // if user selects a MINE square to uncover
+		case ACTION_BOARD_OP:
+			if (0 <= x && x <= xDim + 1 && 0 <= y && y <= yDim + 1) {
+				/* if a selection is made inside game board */
+				if (mines.array[x][y] == 'X' && vMem.array[x][y] != 'P') {
+					/* if user selects a MINE square to uncover */
 					if ((!isFlagMode && op == 1) || (isFlagMode && op == 2)) {
-						clear();
-						clearok(stdscr, 0);
+						clear ();
+						clearok (stdscr, 0);
 						overlayMines (mines, &vMem);
 						vMem.array[x][y] = '#';
-						addstr("+= Minesweeper ");
-						for (x = 4; x < xDim; x++) addstr("==");
-						addstr("=+\n");
-						printBoard(vMem);
-						printCtrls(0, 70);
-						addstr("+==============");
-						for (x = 4; x < xDim; x++) addstr("==");
-						addstr("=+\n");
-						mvaddstr(8, 70, "You died! Game over.\n");
-						refresh();
-						isAlive = 0;
-						setBreak = 1;
+						addstr ("+= Minesweeper ");
+						for (x = 4; x < xDim; x++) addstr ("==");
+						addstr ("=+\n");
+						printBoard (vMem);
+						printCtrls (0, 70);
+						addstr ("+==============");
+						for (x = 4; x < xDim; x++) addstr ("==");
+						addstr ("=+\n");
+						mvaddstr (8, 70, "You died! Game over.\n");
+						refresh ();
+						isAlive = false;
+						setBreak = true;
 						break;
 					}
 				}
@@ -367,14 +382,17 @@ int game(int yDim, int xDim, int qtyMines) {
 					if (buf == vMem.array[x][y] - 48) {
 						buf = 0;
 						for (k = -1; k <= 1; k++) {
-							for (h = -1; h <= 1; h++) { // for each adjacent square
+							for (h = -1; h <= 1; h++) {
+								/* for each adjacent square */
 								if (vMem.array[x + h][y + k] == '+') {
-									if (mines.array[x + h][y + k] != 'X') { // if not mine
+									if (mines.array[x + h][y + k] != 'X') {
+										/* if the square is not s mine */
 										vMem.array[x + h][y + k] = numMines (mines, x + h, y + k) + 48;
 										if (vMem.array[x + h][y + k] == '0') vMem.array[x + h][y + k] = ' ';
-										openSquares(mines, &vMem, x + h, y + k);
+										openSquares (mines, &vMem, x + h, y + k);
 									}
-									else { // is mine
+									else {
+										/* if the square is a mine */
 										buf = 1;
 										vMem.array[x + h][y + k] = '#';
 									}
@@ -383,26 +401,28 @@ int game(int yDim, int xDim, int qtyMines) {
 						}
 						if (buf == 1) {
 							overlayMines (mines, &vMem);
-							move(1, 0);
-							printBoard(vMem);
-							printCtrls(0, 70);
-							mvaddstr(8, 70, "You died! Game over.\n");
-							refresh();
-							isAlive = 0;
-							setBreak = 1;
+							move (1, 0);
+							printBoard (vMem);
+							printCtrls (0, 70);
+							mvaddstr (8, 70, "You died! Game over.\n");
+							refresh ();
+							isAlive = false;
+							setBreak = true;
 							break;
 						}
 					}
 				}
 
 				else {
-					if (!isFlagMode) { // norm mode
+					if (!isFlagMode) {
+						/* game set to normal mode */
 						switch (op) {
 						case 1:
-							if (vMem.array[x][y] == '+' || vMem.array[x][y] == ' ') { // square not flagged
+							if (vMem.array[x][y] == '+' || vMem.array[x][y] == ' ') {
+								/* if square is not flagged */
 								vMem.array[x][y] = 48 + numMines (mines, x, y);
 								if (vMem.array[x][y] == '0') vMem.array[x][y] = ' ';
-								openSquares(mines, &vMem, x, y);
+								openSquares (mines, &vMem, x, y);
 							}
 							break;
 						case 2:
@@ -416,11 +436,9 @@ int game(int yDim, int xDim, int qtyMines) {
 							}
 							break;
 						}
-					}
-					// flag mode
-					else {
+					} else {
+						/* game is set to flag mode */
 						switch (op) {
-							//gameDur+=10;
 						case 1:
 							if (vMem.array[x][y] == '+') {
 								vMem.array[x][y] = 'P';
@@ -432,10 +450,11 @@ int game(int yDim, int xDim, int qtyMines) {
 							}
 							break;
 						case 2:
-							if (vMem.array[x][y] == '+' || vMem.array[x][y] == ' ') { // square not flagged
+							if (vMem.array[x][y] == '+' || vMem.array[x][y] == ' ') {
+								/* if the square is not flagged */
 								vMem.array[x][y] = 48 + numMines (mines, x, y);
 								if (vMem.array[x][y] == '0') vMem.array[x][y] = ' ';
-								openSquares(mines, &vMem, x, y);
+								openSquares (mines, &vMem, x, y);
 							}
 							break;
 						}
@@ -443,14 +462,15 @@ int game(int yDim, int xDim, int qtyMines) {
 				}
 			}
 			break;
-		case 2: // change mode
+		case ACTION_CHG_MODE:
+			/* toggle flag mode */
 			isFlagMode = !isFlagMode;
 			break;
-		case 3: // pause menu
-			menuTime = clock();
+		case ACTION_ESCAPE: /* open the pause menu */
+			menuTime = clock ();
 			printBlank (yDim, xDim);
-			buf = menu();
-			timeOffset += clock() - menuTime;
+			buf = menu ();
+			timeOffset += clock () - menuTime;
 			switch (buf) {
 			case 0:
 				action = ACTION_ESCAPE;
@@ -460,21 +480,21 @@ int game(int yDim, int xDim, int qtyMines) {
 				freeBoardArray (&vMem);
 				return 3;
 			case 2:
-				exitGame = 1;
+				exitGame = true;
 				break;
 			case 4:
-				tutorial();
+				tutorial ();
 				break;
 			}
 			break;
-		case 4: // update clock
-			secsLastLoop = clock();
+		case ACTION_INC_TIME:
+			secsLastLoop = clock ();
 		}
 		if (setBreak) break;
-		refresh();
+		refresh ();
 	}
-	// once player either has won or lost
-	move(18, 0);
+	/* once player either has won or lost */
+	move (18, 0);
 
 	freeBoardArray (&mines);
 	freeBoardArray (&vMem);

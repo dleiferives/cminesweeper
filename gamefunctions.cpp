@@ -1,7 +1,9 @@
-/* definitions for game utility functions */
+/* gamefunctions.cpp 
+   contains definitions for game utility functions */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <curses.h>
 
 #include "gamefunctions.h"
@@ -62,7 +64,7 @@ int printBoard (Board board, bool hide, chtype mineChar, chtype flagChar) {
 			}
 			chars++;
 		}
-		addch(' ' | COLOR_PAIR (1));
+		addch (' ' | COLOR_PAIR (1));
 		printw ("-%02d", y);
 		if (board.width < 4)
 			for (x = 0; x < (4 - board.width); x++) printw ("  ");
@@ -86,7 +88,7 @@ int printBoard (Board board, bool hide, chtype mineChar, chtype flagChar) {
 		for (x = 0; x < (4 - board.width); x++) printw ("  ");
 	printw ("|\n");
 	
-	refresh();
+	refresh ();
 	return chars;
 }
 
@@ -101,8 +103,8 @@ int initializeMines (Board * mines) {
 	}
 
 	while (mineCount < mines->mineCount) {
-		x = rand() % (mines->width) + 1;
-		y = rand() % (mines->height) + 1;
+		x = rand () % (mines->width) + 1;
+		y = rand () % (mines->height) + 1;
 		if (mines->array[x][y] != 'X') {
 			mines->array[x][y] = 'X';
 			mineCount++;
@@ -113,7 +115,8 @@ int initializeMines (Board * mines) {
 	return mineCount;
 }
 
-int overlayMines (Board mines, Board * board) { // overlay mines on game board
+/* overlays mines on game board */
+int overlayMines (Board mines, Board * board) {
 	int x, y;
 	for (y = 1; y < mines.height - 1; y++) {
 		for (x = 1; x < mines.width - 1; x++) {
@@ -131,14 +134,14 @@ int overlayMines (Board mines, Board * board) { // overlay mines on game board
 	return 0;
 }
 
+/* calculate number of mines adjacent to square */
 int numMines (Board board, int x, int y) {
-	// brd = source of mine data
 	int numOfMines = 0;
 	int h, k;
 
 	for (k = -1; k <= 1; k++) {
 		for (h = -1; h <= 1; h++) {
-			// check whether index is out of bounds before reading
+			/* check whether index is out of bounds before reading */
 			if (x + h >= 0 && x + h < board.width + 2
 				&& y + k >= 0 && y + k < board.width + 2) {
 				if (board.array[x + h][y + k] == 'X') numOfMines++;
@@ -149,18 +152,21 @@ int numMines (Board board, int x, int y) {
 	return numOfMines;
 }
 
-int openSquares(Board mines, Board * board, int x, int y) {
-	// All squares with 0 must have all adjacent squares cleared
+int openSquares (Board mines, Board * board, int x, int y) {
+	/* All squares with 0 adjacent mines must have all adjacent squares cleared */
 	int h, k;
-	bool freeSquares = 1;
+	bool freeSquares = true;
 	int neighbors = 0;
 	while (freeSquares) {
-		freeSquares = 0;
+		freeSquares = false;
 		if (board->array[x][y] != ' ') break;
-		for (int q = 0; q < 12; q++) { // do 12 times
-			for (y = 1; y < board->height + 1; y++) { //for every tile on board
+		/* do this 12 times: */
+		for (int q = 0; q < 12; q++) {
+			/* for every tile on board: */
+			for (y = 1; y < board->height + 1; y++) {
 				for (x = 1; x < board->height + 1; x++) {
-					if (board->array[x][y] == ' ') { //only if already uncovered
+					if (board->array[x][y] == ' ') {
+						/* only if already uncovered */
 						for (k = -1; k <= 1; k++) {
 							for (h = -1; h <= 1; h++) {
 								if (board->array[x + h][y + k] != 'P') board->array[x + h][y + k] = 48 + numMines (mines, x + h, y + k);
@@ -170,10 +176,11 @@ int openSquares(Board mines, Board * board, int x, int y) {
 					}
 				}
 			}
-
-			for (y = 1; y < board->height + 1; y++) { //for every tile on board
+		    /* for every tile on board */
+			for (y = 1; y < board->height + 1; y++) {
 				for (x = 1; x < board->height + 1; x++) {
-					if (49 <= board->array[x][y] && board->array[x][y] <= 57) { //only if is nonzero num
+					if (49 <= board->array[x][y] && board->array[x][y] <= 57) {
+						/* only if is nonzero num */
 						neighbors = 0;
 						for (k = -1; k <= 1; k++) {
 							for (h = -1; h <= 1; h++) {
@@ -185,39 +192,41 @@ int openSquares(Board mines, Board * board, int x, int y) {
 							}
 						}
 						if (neighbors < 3) {
-							freeSquares = 1;
+							freeSquares = true;
 							break;
 						}
 					}
 				}
 			}
 		}
-		freeSquares = 0;
+		freeSquares = false;
 	}
 	return 0;
 }
 
-bool allClear(Board mines, Board board) {
+bool allClear (Board mines, Board board) {
 	int x, y;
 
 	for (y = 1; y <= mines.height; y++) {
 		for (x = 1; x <= mines.width; x++) {
 			if (mines.array[x][y] == '.' && (board.array[x][y] == '+' || board.array[x][y] == 'P')) {
-				return 0;
+				return false;
 			}
 		}
 	}
 
-	return 1;
+	return true;
 }
 
-int menu() {
-	bool gotInput = 0;
+int menu () {
+	bool gotInput = false;
 	int buf = 0;
-	char option = 0;
-	curs_set(0); // invisible
+	uint8_t option = MENU_NO_INPUT;
+	/* set cursor to invisible */
+	curs_set (0);
 
-	while (!gotInput) { // arrow key input
+	while (!gotInput) {
+		/* get arrow key input */
 		mvprintw (0, 0, "+= Paused ================+");
 		mvprintw (1, 0, "|                         |");
 		mvprintw (2, 0, "|  1) Return to game      |");
@@ -227,40 +236,41 @@ int menu() {
 		mvprintw (6, 0, "|                         |");
 		mvprintw (7, 0, "+=========================+");
 
+		/* draw option pointer */
 		for (int x = 0; x < 4; x++) {
 			if (option == x) mvprintw (2 + x, 5, ">");
 			else mvprintw (2 + x, 5, " ");
 		}
 
-		refresh();
+		refresh ();
 
-		buf = (wgetch(stdscr));
+		buf = (wgetch (stdscr));
 		switch (buf) {
-		case 27: // esc
-			option = 0;
-			gotInput = 1;
+		case 27: /* key code for Esc */
+			option = MENU_NO_INPUT;
+			gotInput = true;
 			break;
 		case '1':
-			option = 0;
-			gotInput = 1;
+			option = MENU_NO_INPUT;
+			gotInput = true;
 			break;
 		case '2':
-			option = 1;
-			gotInput = 1;
+			option = MENU_RESTART;
+			gotInput = true;
 			break;
 		case '3':
-			option = 2;
-			gotInput = 1;
+			option = MENU_EXIT_GAME;
+			gotInput = true;
 			break;
 		case '4':
-			option = 3;
-			gotInput = 1;
+			option = MENU_TUTORIAL;
+			gotInput = true;
 			break;
-		case 10: // enter
-			gotInput = 1;
+		case 10: /* key code for Return */
+			gotInput = true;
 			break;
-		case 32: // space
-			gotInput = 0;
+		case 32: /* key code for space */
+			gotInput = false;
 			break;
 		case KEY_UP:
 			option--;
@@ -281,15 +291,16 @@ int menu() {
 		}
 	}
 
-	if (option == 3) { //tutorial
-		tutorial();
+	if (option == MENU_TUTORIAL) {
+		tutorial ();
 	}
-
-	curs_set(1); // cursor is visible
+	
+	/* set cursor to visible */
+	curs_set (1);
 	return option;
 }
 
-int tutorial() {
+int tutorial () {
 	int x, y;
 	Board vMem = {.width = 9, .height = 9, .mineCount = 10};
 	initBoardArray (&vMem);
@@ -298,9 +309,9 @@ int tutorial() {
 	uint8_t xm[10] = {7, 2, 6, 3, 9, 3, 1, 6, 6, 6};
 	uint8_t ym[10] = {1, 3, 3, 4, 4, 5, 6, 7, 8, 9};
 
-	curs_set(1);
+	curs_set (1);
 
-	// initialize boards and mine data
+	/* initialize boards */
 	for (y = 1; y <= 10; y++) {
 		for (x = 1; x <= 10; x++) {
 			mines.array[x][y] = '.';
@@ -308,56 +319,57 @@ int tutorial() {
 		}
 	}
 
+	/* write mine data to mine struct */
 	for (x = 0; x < 10; x++) {
 		mines.array[xm[x]][ym[x]] = 'X';
 	}
 
-	clear();
-	addstr("+= Tutorial ==============+\n");
-	printBoard(vMem);
-	addstr("+=========================+\n");
-	mvaddstr(16, 0, "Welcome to minesweeper!\n\n\nPress any key to continue...");
-	move(20, 0);
-	refresh();
-	getch();
+	clear ();
+	addstr ("+= Tutorial ==============+\n");
+	printBoard (vMem);
+	addstr ("+=========================+\n");
+	mvaddstr (16, 0, "Welcome to minesweeper!\n\n\nPress any key to continue...");
+	move (20, 0);
+	refresh ();
+	getch ();
 
-	mvaddstr(16, 0, "The goal of the game is to uncover all of the empty squares, while leaving the squares with mines untouched.\n\n\nPress any key to continue...\n");
-	move(20, 0);
-	refresh();
-	getch();
+	mvaddstr (16, 0, "The goal of the game is to uncover all of the empty squares, while leaving the squares with mines untouched.\n\n\nPress any key to continue...\n");
+	move (20, 0);
+	refresh ();
+	getch ();
 
-	mvaddstr(16, 0, "Uncovering a square will make it display a number representing the number of mines in the 8 squares adjacent to it.\n\n\nPress any key to continue...\n");
-	move(1, 0);
+	mvaddstr (16, 0, "Uncovering a square will make it display a number representing the number of mines in the 8 squares adjacent to it.\n\n\nPress any key to continue...\n");
+	move (1, 0);
 	vMem.array[2][4] = 48 + numMines (mines, 2, 4);
 	if (vMem.array[2][4] == '0') vMem.array[2][4] = ' ';
-	openSquares(mines, &vMem, 2, 4);
-	printBoard(vMem);
-	move(20, 0);
-	refresh();
-	getch();
+	openSquares (mines, &vMem, 2, 4);
+	printBoard (vMem);
+	move (20, 0);
+	refresh ();
+	getch ();
 
-	mvaddstr(16, 0, "If you uncover a square surrounded by 0 mines, the game will automatically open squares until all of the adjacent blank squares are open.\n\nPress any key to continue...\n");
-	move(1, 0);
+	mvaddstr (16, 0, "If you uncover a square surrounded by 0 mines, the game will automatically open squares until all of the adjacent blank squares are open.\n\nPress any key to continue...\n");
+	move (1, 0);
 	vMem.array[4][7] = 48 + numMines (mines, 4, 7);
 	if (vMem.array[4][7] == '0') vMem.array[4][7] = ' ';
-	openSquares(mines, &vMem, 4, 7);
-	printBoard(vMem);
-	move(20, 0);
-	refresh();
-	getch();
+	openSquares (mines, &vMem, 4, 7);
+	printBoard (vMem);
+	move (20, 0);
+	refresh ();
+	getch ();
 
-	mvaddstr(16, 0, "Once you are certain that a square contains a mine, you can flag it to avoid accidentally opening it.\n\n\nPress any key to continue...\n");
-	move(1, 0);
+	mvaddstr (16, 0, "Once you are certain that a square contains a mine, you can flag it to avoid accidentally opening it.\n\n\nPress any key to continue...\n");
+	move (1, 0);
 	vMem.array[1][6] = 'P';
 	vMem.array[6][7] = 'P';
 	vMem.array[6][8] = 'P';
 	vMem.array[6][9] = 'P';
-	printBoard(vMem);
-	move(20, 0);
-	refresh();
-	getch();
+	printBoard (vMem);
+	move (20, 0);
+	refresh ();
+	getch ();
 	
-	mvaddstr(16, 0, "The game will end when you either uncover all mine-free squares, or as soon as you uncover a mine.\nGood luck, and SWEEP THOSE MINES!\n\nPress any key to continue...\n");
+	mvaddstr (16, 0, "The game will end when you either uncover all mine-free squares, or as soon as you uncover a mine.\nGood luck, and SWEEP THOSE MINES!\n\nPress any key to continue...\n");
 	for (y = 1; y <= 10; y++) {
 		for (x = 1; x <= 10; x++) {
 			vMem.array[x][y] = 48 + numMines (mines, x, y);
@@ -365,31 +377,31 @@ int tutorial() {
 			if (mines.array[x][y] == 'X') vMem.array[x][y] = 'F';
 		}
 	}
-	move(1, 0);
-	printBoard(vMem);
-	move(20, 0);
-	refresh();
-	getch();
+	move (1, 0);
+	printBoard (vMem);
+	move (20, 0);
+	refresh ();
+	getch ();
 
 	mvprintw (19, 0, "\n");
-	curs_set(2);
+	curs_set (2);
 
 	freeBoardArray (&mines);
 	freeBoardArray (&vMem);
 	return 0;
 }
 
-int printCtrls(int y, int x) {
+int printCtrls (int y, int x) {
 	int cy, cx;
-	getyx(stdscr, cy, cx);
-	mvaddstr(y++, x, "+============= Controls =============+\n");
-	mvaddstr(y++, x, "|Arrow Keys: navigate the field      |\n");
-	mvaddstr(y++, x, "|  Z, Enter: primary select button   |\n");
-	mvaddstr(y++, x, "|         X: secondary select button |\n");
-	mvaddstr(y++, x, "|  M, Space: toggle flagging mode    |\n");
-	mvaddstr(y++, x, "|       Esc: pause menu              |\n");
-	mvaddstr(y++, x, "+====================================+");
-	move(cy, cx);
+	getyx (stdscr, cy, cx);
+	mvaddstr (y++, x, "+============= Controls =============+\n");
+	mvaddstr (y++, x, "|Arrow Keys: navigate the field      |\n");
+	mvaddstr (y++, x, "|  Z, Enter: primary select button   |\n");
+	mvaddstr (y++, x, "|         X: secondary select button |\n");
+	mvaddstr (y++, x, "|  M, Space: toggle flagging mode    |\n");
+	mvaddstr (y++, x, "|       Esc: pause menu              |\n");
+	mvaddstr (y++, x, "+====================================+");
+	move (cy, cx);
 
 	return 0;
 }
@@ -417,17 +429,16 @@ int printBlank (int yDim, int xDim) {
 	mvprintw (line++, 0, "   |");
 
 	for (y = 1; y <= yDim; y++) {
-		//move(line, 0);
 		mvprintw (line, 0, "|%02d-", y);
 		for (x = 1; x <= xDim; x++) {
-			addstr(" +");
+			addstr (" +");
 		}
-		addch(' ' | COLOR_PAIR(1));
+		addch (' ' | COLOR_PAIR (1));
 		printw ("-%02d", y);
 		if (xDim < 4)
 			for (x = 0; x < (4 - xDim); x++) printw ("  ");
 		printw ("|");
-		move(line++, 0);
+		move (line++, 0);
 	}
 
 	mvprintw (line, 0, "|  ");
@@ -438,7 +449,7 @@ int printBlank (int yDim, int xDim) {
 	if (xDim < 4)
 		for (x = 0; x < (4 - xDim); x++) printw ("  ");
 	printw ("   |");
-	move(line++, 0);
+	move (line++, 0);
 
 	mvprintw (line, 0,"|  ");
 	for (x = 0; x <= xDim; x++) {
@@ -449,6 +460,6 @@ int printBlank (int yDim, int xDim) {
 		for (x = 0; x < (4 - xDim); x++) printw ("  ");
 	printw ("   |");
 
-	refresh();
+	refresh ();
 	return yDim * xDim;
 }

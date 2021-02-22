@@ -1,4 +1,6 @@
-/* definition for game board data structure */
+/* board.h
+   contains definition for game board data structure and declarations
+   for game board utility functions */
 #ifndef BOARD_H
 #define BOARD_H
 
