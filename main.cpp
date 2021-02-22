@@ -7,8 +7,10 @@
 #include <math.h>
 #include <time.h>
 #include <curses.h>
-#include "boardfunctions.h"
+
+#include "gamefunctions.h"
 #include "splash.h"
+#include "board.h"
 
 int main (int argc, char* argv[]) {
 	bool gotInput = 0;	// received command line arguments from user
@@ -118,40 +120,40 @@ int main (int argc, char* argv[]) {
 	return 0;
 }
 
-int printBoard (char board[32][32], int yDim, int xDim, bool hide, chtype mineChar, chtype flagChar) {
+int printBoard (Board board, bool hide, chtype mineChar, chtype flagChar) {
 	int chars = 0;
 	int x, y;
 
 	printw ("|  ");
-	for (x = 0; x <= xDim; x++) {
+	for (x = 0; x <= board.width; x++) {
 		if (x % 5 == 0) printw ("%02d", x);
 		else printw ("  ");
 	}
 	printw ("   ");
-	if (xDim < 4)
-		for (x = 0; x < (4 - xDim); x++) printw ("  ");
+	if (board.width < 4)
+		for (x = 0; x < (4 - board.width); x++) printw ("  ");
 	printw ("|\n|  ");
 
-	for (x = 0; x <= xDim; x++) {
+	for (x = 0; x <= board.width; x++) {
 		if (x % 5 == 0) printw ("| ");
 		else printw (". ");
 	}
 	printw ("   ");
-	if (xDim < 4)
-		for (x = 0; x < (4 - xDim); x++) printw ("  ");
+	if (board.width < 4)
+		for (x = 0; x < (4 - board.width); x++) printw ("  ");
 	printw ("|\n");
 
-	for (y = 1; y <= yDim; y++) {
+	for (y = 1; y <= board.height; y++) {
 		printw ("|%02d-", y);
-		for (x = 1; x <= xDim; x++) {
+		for (x = 1; x <= board.width; x++) {
 			addch (' ');
 			if (hide) addch ('+');
 			else {
-				if ('0' <= board[x][y] && board[x][y] <= '9') {
-					addch (board[x][y] | COLOR_PAIR (5));
+				if ('0' <= board.array[x][y] && board.array[x][y] <= '9') {
+					addch (board.array[x][y] | COLOR_PAIR (5));
 					chars++;
 				}
-				else switch (board[x][y]) {
+				else switch (board.array[x][y]) {
 				case '+':
 					addch ('+' | COLOR_PAIR (1));
 					break;
@@ -175,26 +177,26 @@ int printBoard (char board[32][32], int yDim, int xDim, bool hide, chtype mineCh
 		}
 		addch(' ' | COLOR_PAIR (1));
 		printw ("-%02d", y);
-		if (xDim < 4)
-			for (x = 0; x < (4 - xDim); x++) printw ("  ");
+		if (board.width < 4)
+			for (x = 0; x < (4 - board.width); x++) printw ("  ");
 		printw ("|\n");
 	}
 	printw ("|  ");
-	for (x = 0; x <= xDim; x++) {
+	for (x = 0; x <= board.width; x++) {
 		if (x % 5 == 0) printw ("| ");
 		else printw ("' ");
 	}
 	printw ("   ");
-	if (xDim < 4)
-		for (x = 0; x < (4 - xDim); x++) printw ("  ");
+	if (board.width < 4)
+		for (x = 0; x < (4 - board.width); x++) printw ("  ");
 	printw ("|\n|  ");
-	for (x = 0; x <= xDim; x++) {
+	for (x = 0; x <= board.width; x++) {
 		if (x % 5 == 0) printw ("%02d", x);
 		else printw ("  ");
 	}
 	printw ("   ");
-	if (xDim < 4)
-		for (x = 0; x < (4 - xDim); x++) printw ("  ");
+	if (board.width < 4)
+		for (x = 0; x < (4 - board.width); x++) printw ("  ");
 	printw ("|\n");
 	
 	refresh();
@@ -260,40 +262,40 @@ int printBlank (int yDim, int xDim) {
 	return yDim * xDim;
 }
 
-int initializeMines (char mines[32][32], int yDim, int xDim, int qtyMines) {
+int initializeMines (Board * mines) {
 	int mineCount = 0;
 	int x, y;
 
-	for (y = 0; y < 32; y++) {
-		for (x = 0; x < 32; x++) {
-			mines[x][y] = '.';
+	for (y = 0; y < mines->height + 2; y++) {
+		for (x = 0; x < mines->width + 2; x++) {
+			mines->array[x][y] = '.';
 		}
 	}
 
-	while (mineCount < qtyMines) {
-		x = rand() % (xDim) + 1;
-		y = rand() % (yDim) + 1;
-		if (mines[x][y] != 'X') {
-			mines[x][y] = 'X';
+	while (mineCount < mines->mineCount) {
+		x = rand() % (mines->width) + 1;
+		y = rand() % (mines->height) + 1;
+		if (mines->array[x][y] != 'X') {
+			mines->array[x][y] = 'X';
 			mineCount++;
 		}
-		if (mineCount > xDim * yDim - 2) break;
+		if (mineCount > (mines->width * mines->height) - 2) break;
 	}
 
 	return mineCount;
 }
 
-int overlayMines (char mines[32][32], char board[32][32]) { // overlay mines on game board
+int overlayMines (Board mines, Board * board) { // overlay mines on game board
 	int x, y;
-	for (y = 1; y < 31; y++) {
-		for (x = 1; x < 31; x++) {
-			if (mines[x][y] == 'X') {
-				switch (board[x][y]) {
+	for (y = 1; y < mines.height - 1; y++) {
+		for (x = 1; x < mines.width - 1; x++) {
+			if (mines.array[x][y] == 'X') {
+				switch (board->array[x][y]) {
 				case 'P':
-					board[x][y] = 'F';
+					board->array[x][y] = 'F';
 					break;
 				default:
-					board[x][y] = 'X';
+					board->array[x][y] = 'X';
 				}
 			}
 		}
@@ -301,50 +303,54 @@ int overlayMines (char mines[32][32], char board[32][32]) { // overlay mines on 
 	return 0;
 }
 
-int numMines (char board[32][32], int x, int y) {
+int numMines (Board board, int x, int y) {
 	// brd = source of mine data
 	int numOfMines = 0;
 	int h, k;
 
 	for (k = -1; k <= 1; k++) {
 		for (h = -1; h <= 1; h++) {
-			if (board[x + h][y + k] == 'X') numOfMines++;
+			// check whether index is out of bounds before reading
+			if (x + h >= 0 && x + h < board.width + 2
+				&& y + h >= 0 && y + h < board.width + 2) {
+				if (board.array[x + h][y + k] == 'X') numOfMines++;
+			}
 		}
 	}
 
 	return numOfMines;
 }
 
-int openSquares(char mines[32][32], char board[32][32], int x, int y, int yDim, int xDim) {
+int openSquares(Board mines, Board * board, int x, int y) {
 	// All squares with 0 must have all adjacent squares cleared
 	int h, k;
 	bool freeSquares = 1;
 	int neighbors = 0;
 	while (freeSquares) {
 		freeSquares = 0;
-		if (board[x][y] != ' ') break;
+		if (board->array[x][y] != ' ') break;
 		for (int q = 0; q < 12; q++) { // do 12 times
-			for (y = 1; y < yDim + 1; y++) { //for every tile on board
-				for (x = 1; x < xDim + 1; x++) {
-					if (board[x][y] == ' ') { //only if already uncovered
+			for (y = 1; y < board->height + 1; y++) { //for every tile on board
+				for (x = 1; x < board->height + 1; x++) {
+					if (board->array[x][y] == ' ') { //only if already uncovered
 						for (k = -1; k <= 1; k++) {
 							for (h = -1; h <= 1; h++) {
-								if (board[x + h][y + k] != 'P') board[x + h][y + k] = 48 + numMines (mines, x + h, y + k);
-								if (board[x + h][y + k] == '0') board[x + h][y + k] = ' ';
+								if (board->array[x + h][y + k] != 'P') board->array[x + h][y + k] = 48 + numMines (mines, x + h, y + k);
+								if (board->array[x + h][y + k] == '0') board->array[x + h][y + k] = ' ';
 							}
 						}
 					}
 				}
 			}
 
-			for (y = 1; y < yDim + 1; y++) { //for every tile on board
-				for (x = 1; x < xDim + 1; x++) {
-					if (49 <= board[x][y] && board[x][y] <= 57) { //only if is nonzero num
+			for (y = 1; y < board->height + 1; y++) { //for every tile on board
+				for (x = 1; x < board->height + 1; x++) {
+					if (49 <= board->array[x][y] && board->array[x][y] <= 57) { //only if is nonzero num
 						neighbors = 0;
 						for (k = -1; k <= 1; k++) {
 							for (h = -1; h <= 1; h++) {
 
-								if (48 <= board[x + h][y + k] && board[x + h][y + k] <= 57) {
+								if (48 <= board->array[x + h][y + k] && board->array[x + h][y + k] <= 57) {
 									neighbors++;
 								}
 
@@ -363,12 +369,12 @@ int openSquares(char mines[32][32], char board[32][32], int x, int y, int yDim, 
 	return 0;
 }
 
-bool allClear(char mines[32][32], char board[32][32], int yDim, int xDim) {
+bool allClear(Board mines, Board board) {
 	int x, y;
 
-	for (y = 1; y <= yDim; y++) {
-		for (x = 1; x <= xDim; x++) {
-			if (mines[x][y] == '.' && (board[x][y] == '+' || board[x][y] == 'P')) {
+	for (y = 1; y <= mines.height; y++) {
+		for (x = 1; x <= mines.width; x++) {
+			if (mines.array[x][y] == '.' && (board.array[x][y] == '+' || board.array[x][y] == 'P')) {
 				return 0;
 			}
 		}
@@ -380,6 +386,7 @@ bool allClear(char mines[32][32], char board[32][32], int yDim, int xDim) {
 int game(int yDim, int xDim, int qtyMines) {
 	int x = 0, y = 0; // vars for array navigation
 	int h, k;
+	int i; /* index variable used for iteration */
 	int cx = 5, cy = 3; // vars for console navigation: initialized at top left of game board
 	MEVENT m_event;
 	bool isFlagMode = 0, gotInput = 0; // flags
@@ -387,8 +394,12 @@ int game(int yDim, int xDim, int qtyMines) {
 	bool firstClick = 0;
 	bool setBreak = 0;
 	double gameDur = 0;
-	char mines[32][32];
-	char vMem[32][32];
+
+	Board mines = {.width = xDim, .height = yDim, .mineCount = qtyMines};
+	initBoardArray (&mines);
+	Board vMem = {.width = xDim, .height = yDim, .mineCount = qtyMines};
+	initBoardArray (&vMem);
+
 	char op = 0, action = 0;
 	long cyclesElapsed = 0;
 	long secsLastLoop = 0;
@@ -411,16 +422,16 @@ int game(int yDim, int xDim, int qtyMines) {
 	init_pair(5, COLOR_CYAN,  COLOR_BLACK); // for numbers
 
 	// initialize array of elements to be displayed
-	for (y = 0; y < 32; y++) {
-		for (x = 0; x < 32; x++) {
-			vMem[x][y] = '+';
+	for (y = 0; y < vMem.height + 2; y++) {
+		for (x = 0; x < vMem.width + 2; x++) {
+			vMem.array[x][y] = '+';
 		}
 	}
-	
+
 	//now begin gameplay
 	noecho();
 	clear();
-	initializeMines(&mines[0], yDim, xDim, qtyMines);
+	initializeMines(&mines);
 	secsLastLoop = clock();
 
 	while (isAlive) {
@@ -428,10 +439,10 @@ int game(int yDim, int xDim, int qtyMines) {
 		addstr("+= Minesweeper ");
 		for (x = 4; x < xDim; x++) addstr("==");
 		addstr("=+\n");
-
-		if (allClear(&mines[0], &vMem[0], yDim, xDim)) { // only if player has won
-			overlayMines (mines, vMem);
-			printBoard(&vMem[0], yDim, xDim, 0, (chtype)'F' | COLOR_PAIR(4));
+		
+		if (allClear(mines, vMem)) { // only if player has won
+			overlayMines (mines, &vMem);
+			printBoard(vMem, false, (chtype)'F' | COLOR_PAIR(4));
 			printCtrls(0, 70);
 			addstr("+==============");
 			for (x = 4; x < xDim; x++) addstr("==");
@@ -441,7 +452,7 @@ int game(int yDim, int xDim, int qtyMines) {
 			break;
 		}
 		else {
-			printBoard(&vMem[0], yDim, xDim);
+			printBoard(vMem);
 			printCtrls(0, 70);
 			addstr("+==============");
 			for (x = 4; x < xDim; x++) addstr("==");
@@ -456,7 +467,11 @@ int game(int yDim, int xDim, int qtyMines) {
 		//printw ("firstclick=%d | offset = %ld ", firstClick, timeOffset);
 		printw ("Time: %03d", (int)floorf(gameDur));
 		
-		if (exitGame) return 2;
+		if (exitGame) {
+			freeBoardArray (&mines);
+			freeBoardArray (&vMem);
+			return 2;
+		}
 
 		action = 0;
 		setBreak = 0;
@@ -562,14 +577,15 @@ int game(int yDim, int xDim, int qtyMines) {
 		// this is to make sure that the player does not die on the first move
 		buf = 0;
 		if (!firstClick) {
-			while (numMines (mines, x, y) > 0 || mines[x][y] == 'X') {
-				initializeMines(mines, yDim, xDim, qtyMines);
+			while (numMines (mines, x, y) > 0 || mines.array[x][y] == 'X') {
+				initializeMines(&mines);
 				buf++;
 				if (buf > 100) break;
 			}
 			if (buf > 100) {
-				initializeMines(mines, yDim, xDim, qtyMines + 1);
-				if (mines[x][y] == 'X')	mines[x][y] = '.';
+				mines.mineCount++;
+				initializeMines(&mines);
+				if (mines.array[x][y] == 'X')	mines.array[x][y] = '.';
 			}
 		}
 
@@ -579,16 +595,16 @@ int game(int yDim, int xDim, int qtyMines) {
 		switch (action) {
 		case 1: // if board operation
 			if (0 <= x && x <= xDim + 1 && 0 <= y && y <= yDim + 1) { // selection is made inside game board 
-				if (mines[x][y] == 'X' && vMem[x][y] != 'P') { // if user selects a MINE square to uncover
+				if (mines.array[x][y] == 'X' && vMem.array[x][y] != 'P') { // if user selects a MINE square to uncover
 					if ((!isFlagMode && op == 1) || (isFlagMode && op == 2)) {
 						clear();
 						clearok(stdscr, 0);
-						overlayMines (&mines[0], &vMem[0]);
-						vMem[x][y] = '#';
+						overlayMines (mines, &vMem);
+						vMem.array[x][y] = '#';
 						addstr("+= Minesweeper ");
 						for (x = 4; x < xDim; x++) addstr("==");
 						addstr("=+\n");
-						printBoard(&vMem[0], yDim, xDim);
+						printBoard(vMem);
 						printCtrls(0, 70);
 						addstr("+==============");
 						for (x = 4; x < xDim; x++) addstr("==");
@@ -601,34 +617,34 @@ int game(int yDim, int xDim, int qtyMines) {
 					}
 				}
 
-				if ('1' <= vMem[x][y] && vMem[x][y] <= '9') {
+				if ('1' <= vMem.array[x][y] && vMem.array[x][y] <= '9') {
 					buf = 0;
 					for (k = -1; k <= 1; k++) {
 						for (h = -1; h <= 1; h++) {
-							if (vMem[x + h][y + k] == 'P') buf++;
+							if (vMem.array[x + h][y + k] == 'P') buf++;
 						}
 					}
-					if (buf == vMem[x][y] - 48) {
+					if (buf == vMem.array[x][y] - 48) {
 						buf = 0;
 						for (k = -1; k <= 1; k++) {
 							for (h = -1; h <= 1; h++) { // for each adjacent square
-								if (vMem[x + h][y + k] == '+') {
-									if (mines[x + h][y + k] != 'X') { // if not mine
-										vMem[x + h][y + k] = numMines (mines, x + h, y + k) + 48;
-										if (vMem[x + h][y + k] == '0') vMem[x + h][y + k] = ' ';
-										openSquares(mines, vMem, x + h, y + k, yDim, xDim);
+								if (vMem.array[x + h][y + k] == '+') {
+									if (mines.array[x + h][y + k] != 'X') { // if not mine
+										vMem.array[x + h][y + k] = numMines (mines, x + h, y + k) + 48;
+										if (vMem.array[x + h][y + k] == '0') vMem.array[x + h][y + k] = ' ';
+										openSquares(mines, &vMem, x + h, y + k);
 									}
 									else { // is mine
 										buf = 1;
-										vMem[x + h][y + k] = '#';
+										vMem.array[x + h][y + k] = '#';
 									}
 								}
 							}
 						}
 						if (buf == 1) {
-							overlayMines (&mines[0], &vMem[0]);
+							overlayMines (mines, &vMem);
 							move(1, 0);
-							printBoard(&vMem[0], yDim, xDim);
+							printBoard(vMem);
 							printCtrls(0, 70);
 							mvaddstr(8, 70, "You died! Game over.\n");
 							refresh();
@@ -643,19 +659,19 @@ int game(int yDim, int xDim, int qtyMines) {
 					if (!isFlagMode) { // norm mode
 						switch (op) {
 						case 1:
-							if (vMem[x][y] == '+' || vMem[x][y] == ' ') { // square not flagged
-								vMem[x][y] = 48 + numMines (&mines[0], x, y);
-								if (vMem[x][y] == '0') vMem[x][y] = ' ';
-								openSquares(&mines[0], &vMem[0], x, y, yDim, xDim);
+							if (vMem.array[x][y] == '+' || vMem.array[x][y] == ' ') { // square not flagged
+								vMem.array[x][y] = 48 + numMines (mines, x, y);
+								if (vMem.array[x][y] == '0') vMem.array[x][y] = ' ';
+								openSquares(mines, &vMem, x, y);
 							}
 							break;
 						case 2:
-							if (vMem[x][y] == '+') {
-								vMem[x][y] = 'P';
+							if (vMem.array[x][y] == '+') {
+								vMem.array[x][y] = 'P';
 								flagsPlaced++;
 							}
-							else if (vMem[x][y] == 'P') {
-								vMem[x][y] = '+';
+							else if (vMem.array[x][y] == 'P') {
+								vMem.array[x][y] = '+';
 								flagsPlaced--;
 							}
 							break;
@@ -666,20 +682,20 @@ int game(int yDim, int xDim, int qtyMines) {
 						switch (op) {
 							//gameDur+=10;
 						case 1:
-							if (vMem[x][y] == '+') {
-								vMem[x][y] = 'P';
+							if (vMem.array[x][y] == '+') {
+								vMem.array[x][y] = 'P';
 								flagsPlaced++;
 							}
-							else if (vMem[x][y] == 'P') {
-								vMem[x][y] = '+';
+							else if (vMem.array[x][y] == 'P') {
+								vMem.array[x][y] = '+';
 								flagsPlaced--;
 							}
 							break;
 						case 2:
-							if (vMem[x][y] == '+' || vMem[x][y] == ' ') { // square not flagged
-								vMem[x][y] = 48 + numMines (&mines[0], x, y);
-								if (vMem[x][y] == '0') vMem[x][y] = ' ';
-								openSquares(&mines[0], &vMem[0], x, y, yDim, xDim);
+							if (vMem.array[x][y] == '+' || vMem.array[x][y] == ' ') { // square not flagged
+								vMem.array[x][y] = 48 + numMines (mines, x, y);
+								if (vMem.array[x][y] == '0') vMem.array[x][y] = ' ';
+								openSquares(mines, &vMem, x, y);
 							}
 							break;
 						}
@@ -700,8 +716,9 @@ int game(int yDim, int xDim, int qtyMines) {
 				action = 3;
 				break;
 			case 1:
+				freeBoardArray (&mines);
+				freeBoardArray (&vMem);
 				return 3;
-				break;
 			case 2:
 				exitGame = 1;
 				break;
@@ -718,6 +735,9 @@ int game(int yDim, int xDim, int qtyMines) {
 	}
 	// once player either has won or lost
 	move(18, 0);
+
+	freeBoardArray (&mines);
+	freeBoardArray (&vMem);
 	if (action == 3) return 2;
 	else return isAlive;
 }
@@ -802,8 +822,10 @@ int menu() {
 
 int tutorial() {
 	int x, y;
-	char vMem[32][32];
-	char mines[32][32];
+	Board vMem = {.width = 9, .height = 9, .mineCount = 10};
+	initBoardArray (&vMem);
+	Board mines = vMem;
+	initBoardArray (&mines);
 	char xm[10] = {7, 2, 6, 3, 9, 3, 1, 6, 6, 6};
 	char ym[10] = {1, 3, 3, 4, 4, 5, 6, 7, 8, 9};
 
@@ -812,13 +834,13 @@ int tutorial() {
 	// initialize boards and mine data
 	for (y = 1; y <= 10; y++) {
 		for (x = 1; x <= 10; x++) {
-			mines[x][y] = '.';
-			vMem[x][y] = '+';
+			mines.array[x][y] = '.';
+			vMem.array[x][y] = '+';
 		}
 	}
 
 	for (x = 0; x < 10; x++) {
-		mines[xm[x]][ym[x]] = 'X';
+		mines.array[xm[x]][ym[x]] = 'X';
 	}
 
 	clear();
@@ -837,9 +859,9 @@ int tutorial() {
 
 	mvaddstr(16, 0, "Uncovering a square will make it display a number representing the number of mines in the 8 squares adjacent to it.\n\n\nPress any key to continue...\n");
 	move(1, 0);
-	vMem[2][4] = 48 + numMines (&mines[0], 2, 4);
-	if (vMem[2][4] == '0') vMem[2][4] = ' ';
-	openSquares(mines, vMem, 2, 4);
+	vMem.array[2][4] = 48 + numMines (mines, 2, 4);
+	if (vMem.array[2][4] == '0') vMem.array[2][4] = ' ';
+	openSquares(mines, &vMem, 2, 4);
 	printBoard(vMem);
 	move(20, 0);
 	refresh();
@@ -847,9 +869,9 @@ int tutorial() {
 
 	mvaddstr(16, 0, "If you uncover a square surrounded by 0 mines, the game will automatically open squares until all of the adjacent blank squares are open.\n\nPress any key to continue...\n");
 	move(1, 0);
-	vMem[4][7] = 48 + numMines (&mines[0], 4, 7);
-	if (vMem[4][7] == '0') vMem[4][7] = ' ';
-	openSquares(mines, vMem, 4, 7);
+	vMem.array[4][7] = 48 + numMines (mines, 4, 7);
+	if (vMem.array[4][7] == '0') vMem.array[4][7] = ' ';
+	openSquares(mines, &vMem, 4, 7);
 	printBoard(vMem);
 	move(20, 0);
 	refresh();
@@ -857,10 +879,10 @@ int tutorial() {
 
 	mvaddstr(16, 0, "Once you are certain that a square contains a mine, you can flag it to avoid accidentally opening it.\n\n\nPress any key to continue...\n");
 	move(1, 0);
-	vMem[1][6] = 'P';
-	vMem[6][7] = 'P';
-	vMem[6][8] = 'P';
-	vMem[6][9] = 'P';
+	vMem.array[1][6] = 'P';
+	vMem.array[6][7] = 'P';
+	vMem.array[6][8] = 'P';
+	vMem.array[6][9] = 'P';
 	printBoard(vMem);
 	move(20, 0);
 	refresh();
@@ -869,9 +891,9 @@ int tutorial() {
 	mvaddstr(16, 0, "The game will end when you either uncover all mine-free squares, or as soon as you uncover a mine.\nGood luck, and SWEEP THOSE MINES!\n\nPress any key to continue...\n");
 	for (y = 1; y <= 10; y++) {
 		for (x = 1; x <= 10; x++) {
-			vMem[x][y] = 48 + numMines (mines, x, y);
-			if (vMem[x][y] == '0') vMem[x][y] = ' ';
-			if (mines[x][y] == 'X') vMem[x][y] = 'F';
+			vMem.array[x][y] = 48 + numMines (mines, x, y);
+			if (vMem.array[x][y] == '0') vMem.array[x][y] = ' ';
+			if (mines.array[x][y] == 'X') vMem.array[x][y] = 'F';
 		}
 	}
 	move(1, 0);
@@ -882,6 +904,9 @@ int tutorial() {
 
 	mvprintw (19, 0, "\n");
 	curs_set(2);
+
+	freeBoardArray (&mines);
+	freeBoardArray (&vMem);
 	return 0;
 }
 
