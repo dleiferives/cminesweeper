@@ -5,9 +5,9 @@
 #include <stdlib.h>
 
 typedef struct {
-    size_t width;
-    size_t height;
-    size_t mineCount;
+    int width;
+    int height;
+    long mineCount;
     char ** array;
 } Board;
 

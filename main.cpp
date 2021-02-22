@@ -7,6 +7,7 @@
 #include <math.h>
 #include <time.h>
 #include <curses.h>
+#include <stdint.h>
 
 #include "gamefunctions.h"
 #include "splash.h"
@@ -25,11 +26,7 @@ int main (int argc, char* argv[]) {
 	clear ();
 	mmask_t old;
 	mousemask (ALL_MOUSE_EVENTS, &old);
-	// a ridiculously long string:
-	{
-		addstr (SPLASH);
-	}
-	// the above looks best once the program is actually run
+	addstr (SPLASH);
 	curs_set (0);
 	wgetch (stdscr);
 	curs_set (1);
@@ -64,7 +61,7 @@ int main (int argc, char* argv[]) {
 		printw ("1) Beginner    : 9x9, 10 mines\n");
 		printw ("2) Intermediate: 16x16, 40 mines\n");
 		printw ("3) Advanced    : 30x24, 99 mines\n>");
-		while (!('1' <= input && input <= '3' || input == 27))
+		while (!(('1' <= input && input <= '3') || input == 27))
 			input = getch ();
 
 		switch (input) {
@@ -312,7 +309,7 @@ int numMines (Board board, int x, int y) {
 		for (h = -1; h <= 1; h++) {
 			// check whether index is out of bounds before reading
 			if (x + h >= 0 && x + h < board.width + 2
-				&& y + h >= 0 && y + h < board.width + 2) {
+				&& y + k >= 0 && y + k < board.width + 2) {
 				if (board.array[x + h][y + k] == 'X') numOfMines++;
 			}
 		}
@@ -386,7 +383,6 @@ bool allClear(Board mines, Board board) {
 int game(int yDim, int xDim, int qtyMines) {
 	int x = 0, y = 0; // vars for array navigation
 	int h, k;
-	int i; /* index variable used for iteration */
 	int cx = 5, cy = 3; // vars for console navigation: initialized at top left of game board
 	MEVENT m_event;
 	bool isFlagMode = 0, gotInput = 0; // flags
@@ -401,7 +397,6 @@ int game(int yDim, int xDim, int qtyMines) {
 	initBoardArray (&vMem);
 
 	char op = 0, action = 0;
-	long cyclesElapsed = 0;
 	long secsLastLoop = 0;
 	long timeOffset = 0;
 	long menuTime;
@@ -527,11 +522,13 @@ int game(int yDim, int xDim, int qtyMines) {
 				gotInput = 1;
 				break;
 			case 'z':
+			case '/':
 				op = 1;
 				action = 1;
 				gotInput = 1;
 				break;
 			case 'x':
+			case '\'':
 				op = 2;
 				action = 1;
 				gotInput = 1;
@@ -549,15 +546,19 @@ int game(int yDim, int xDim, int qtyMines) {
 				gotInput = 1;
 				break;
 			case KEY_UP:
+			case 'w':
 				if (4 <= cy && cy <= yDim + 2) cy--;
 				break;
 			case KEY_DOWN:
+			case 's':
 				if (3 <= cy && cy <= yDim + 1) cy++;
 				break;
 			case KEY_LEFT:
+			case 'a':
 				if (7 <= cx && cx <= 2 * xDim + 3) cx -= 2;
 				break;
 			case KEY_RIGHT:
+			case 'd':
 				if (5 <= cx && cx <= 2 * xDim + 1) cx += 2;
 				break;
 			}
@@ -826,8 +827,8 @@ int tutorial() {
 	initBoardArray (&vMem);
 	Board mines = vMem;
 	initBoardArray (&mines);
-	char xm[10] = {7, 2, 6, 3, 9, 3, 1, 6, 6, 6};
-	char ym[10] = {1, 3, 3, 4, 4, 5, 6, 7, 8, 9};
+	uint8_t xm[10] = {7, 2, 6, 3, 9, 3, 1, 6, 6, 6};
+	uint8_t ym[10] = {1, 3, 3, 4, 4, 5, 6, 7, 8, 9};
 
 	curs_set(1);
 
