@@ -16,5 +16,6 @@ int game (int = 9, int = 9, int = 10); // returns 0 on game failure, 1 on succes
 int menu (); // returns 0 on no input, 1 on restart, 2 on exit, 3 on debug
 int tutorial ();
 int printCtrls (int = 3, int = 29);
+int printBlank (int, int);
 
 #endif /* GAMEFUNCTIONS_H */
