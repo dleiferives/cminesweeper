@@ -298,32 +298,46 @@ int game (int yDim, int xDim, int qtyMines) {
 				break;
 			case KEY_UP:
 			case 'w':
-				if (4 <= cy && cy <= yDim + 2) cy--;
+				cy--;
 				break;
 			case KEY_DOWN:
 			case 's':
-				if (3 <= cy && cy <= yDim + 1) cy++;
+				cy++;
 				break;
 			case KEY_LEFT:
 			case 'a':
-				if (7 <= cx && cx <= 2 * xDim + 3) cx -= 2;
+				cx -= 2;
 				break;
 			case KEY_RIGHT:
 			case 'd':
-				if (5 <= cx && cx <= 2 * xDim + 1) cx += 2;
+				cx += 2;
 				break;
 			}
+
+			/* round the cursor position to nearest grid coordinate */
+			if (cx % 2 == 0)
+				cx--;
+			
+			/* if the cursor is out of bounds, place it back in the valid range */
+			if (cy < 3)
+				cy = 3;
+			if (cy > 2 + yDim)
+				cy = 2 + yDim;
+			if (cx < 5)
+				cx = 5;
+			if (cx > 3 + 2 * xDim)
+				cx = 3 + 2 * xDim;
+			
+			/* finally, move the cursor */
 			move (cy, cx);
 			refresh ();
 		}
 
-		nodelay (stdscr, 0);
+		nodelay (stdscr, false);
 		/* set cursor to mildly visible */
 		curs_set (1);
 
-		cx = (cx % 2 == 0)
-			? cx - 1
-			: cx;
+		/* translate cursor coordinates to array coordinates */
 		x = (cx - 2) / 2;
 		y = cy - 2;
 
@@ -342,7 +356,7 @@ int game (int yDim, int xDim, int qtyMines) {
 			}
 		}
 
-		if (gotInput && action != ACTION_CHG_MODE && action != ACTION_ESCAPE) firstClick = true;
+		if (gotInput && action == ACTION_BOARD_OP) firstClick = true;
 		
 		/* This switch is responsible for handling the user input gathered in the beginning. */
 		switch (action) {
