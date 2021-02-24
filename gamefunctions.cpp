@@ -221,7 +221,7 @@ bool allClear (Board mines, Board board) {
 int menu () {
 	bool gotInput = false;
 	int buf = 0;
-	uint8_t option = MENU_NO_INPUT;
+	int8_t option = MENU_NO_INPUT;
 	/* set cursor to invisible */
 	curs_set (0);
 
@@ -303,10 +303,18 @@ int menu () {
 
 int tutorial () {
 	int x, y;
-	Board vMem = {.width = 9, .height = 9, .mineCount = 10};
-	initBoardArray (&vMem);
-	Board mines = vMem;
+	Board mines;
+	mines.width = 9;
+	mines.height = 9;
+	mines.mineCount = 10;
 	initBoardArray (&mines);
+
+	Board vMem;
+	vMem.width = 9;
+	vMem.height = 9;
+	vMem.mineCount = 10;
+	initBoardArray (&vMem);
+
 	uint8_t xm[10] = {7, 2, 6, 3, 9, 3, 1, 6, 6, 6};
 	uint8_t ym[10] = {1, 3, 3, 4, 4, 5, 6, 7, 8, 9};
 

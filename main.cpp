@@ -139,9 +139,16 @@ int game (int yDim, int xDim, int qtyMines) {
 	/* game duration */
 	double gameDur = 0;
 
-	Board mines = {.width = xDim, .height = yDim, .mineCount = qtyMines};
+	Board mines;
+	mines.width = xDim;
+	mines.height = yDim;
+	mines.mineCount = qtyMines;
 	initBoardArray (&mines);
-	Board vMem = {.width = xDim, .height = yDim, .mineCount = qtyMines};
+
+	Board vMem;
+	vMem.width = xDim;
+	vMem.height = yDim;
+	vMem.mineCount = qtyMines;
 	initBoardArray (&vMem);
 
 	/* stores whether the user used the primary or secondary button */
