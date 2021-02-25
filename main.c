@@ -17,11 +17,15 @@ int main (int argc, char* argv[]) {
 	/* if the user provided command line arguments */
 	bool gotInput = false;
 	/* status returned by game () */
-	int exitCode = 1;
-	int input = 0;		
-	int xDim = 9, yDim = 9, qtyMines = 10;
+	int exitCode = GAME_SUCCESS;
+	int input = 0;
+	/* dimensions of the game board */
+	int xDim = 9, yDim = 9;
+	int qtyMines = 10;
 	/* x-offset of where to print the HUD */
 	int hudOffset;
+	/* dimensions of the terminal */
+	int termWidth, termHeight;
 
 	srand (time (0));
 	initscr ();
@@ -44,16 +48,21 @@ int main (int argc, char* argv[]) {
 		qtyMines = atoi (argv[argc - 1]);
 		gotInput = true;
 	}
+	
+	/* get terminal dimensions */
+	getmaxyx(stdscr, termHeight, termWidth);
 
-	/* set upper and lower limits for acceptable dimensions */
+	/* set upper and lower limits for acceptable dimensions based on terminal dimensions */
+	/* minimum dimension is always 1 */
 	if (xDim < 1)
 		xDim = 1;
-	if (xDim > 30)
-		xDim = 30;
 	if (yDim < 1)
 		yDim = 1;
-	if (yDim > 24)
-		yDim = 24;
+	/* maxima will be set based on the terminal dimensions */
+	if (2 * xDim + 49 > termWidth)
+		xDim = (termWidth - 49) / 2;
+	if (yDim + 6 > termHeight)
+		yDim = termHeight - 6;
 	if (qtyMines < 1)
 		qtyMines = 1;
 	if (qtyMines > xDim * yDim - 1)
@@ -70,8 +79,8 @@ int main (int argc, char* argv[]) {
 		printw ("1) Beginner    : 9x9, 10 mines\n");
 		printw ("2) Intermediate: 16x16, 40 mines\n");
 		printw ("3) Advanced    : 30x24, 99 mines\n>");
-		while (!(('1' <= input && input <= '3') || input == 27))
-			input = getch ();
+		while (!(('1' <= input && input <= '3') || input == 27 || input == 'Q'))
+			input = toupper (getch ());
 
 		switch (input) {
 		case '1':
@@ -91,7 +100,7 @@ int main (int argc, char* argv[]) {
 			break;
 		// case '4':
 		// 	break;
-		case 'q':
+		case 'Q':
 		case 27:
 			exitCode = -1;
 			break;
