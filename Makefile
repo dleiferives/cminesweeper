@@ -1,5 +1,5 @@
-all: main.cpp 
-	g++ -o cminesweeper main.cpp board.cpp gamefunctions.cpp -lncurses
+all: main.c
+	gcc -o cminesweeper main.c board.c gamefunctions.c -lncurses -lm
 
-debug: main.cpp
-	g++ -o cminesweeper -ggdb3 -Wall main.cpp board.cpp gamefunctions.cpp -lncurses
+debug: main.c
+	gcc -o cminesweeper -ggdb3 -Wall main.c board.c gamefunctions.c -lncurses -lm
