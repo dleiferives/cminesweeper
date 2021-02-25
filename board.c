@@ -1,4 +1,4 @@
-/* board.cpp
+/* board.c
    defines utility functions for board memory management */
 
 #include <stdlib.h>

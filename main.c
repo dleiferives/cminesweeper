@@ -1,4 +1,4 @@
-/* main.cpp */
+/* main.c */
 
 #include <string.h>
 #include <stdio.h>
@@ -99,7 +99,7 @@ int main (int argc, char* argv[]) {
 	/* do while exitCode is one of the 4 valid values */
 	while (0 <= exitCode && exitCode <= 4) {
 		clear ();
-		exitCode = game (yDim, xDim, qtyMines);
+		exitCode = game (xDim, yDim, qtyMines);
 		if (exitCode == 0 || exitCode == 1) {
 			/* if playe won or lost */
 			echo ();
@@ -220,7 +220,7 @@ int game (int xDim, int yDim, int qtyMines) {
 		if (exitGame) {
 			freeBoardArray (&mines);
 			freeBoardArray (&vMem);
-			return 2;
+			return GAME_EXIT;
 		}
 
 		action = ACTION_NONE;
@@ -237,7 +237,7 @@ int game (int xDim, int yDim, int qtyMines) {
 
 		/* set cursor to very visible */
 		curs_set (2);
-		nodelay (stdscr, 1);
+		nodelay (stdscr, true);
 
 		/* This loop is responsible for taking user input.
 		   The loop will be interrupted every time that one second passes to refresh the screen. */
@@ -293,7 +293,7 @@ int game (int xDim, int yDim, int qtyMines) {
 				gotInput = true;
 				break;
 			case 'r':
-				return 3;
+				return GAME_RESTART;
 			case 10: /* key code for Return */
 				getyx (stdscr, cy, cx);
 				op = 1;
@@ -409,11 +409,8 @@ int game (int xDim, int yDim, int qtyMines) {
 								if (vMem.array[x + h][y + k] == '+') {
 									if (mines.array[x + h][y + k] != 'X') {
 										/* if the square is not a mine */
-										vMem.array[x + h][y + k] = numMines (mines, x + h, y + k) + 48;
-										if (vMem.array[x + h][y + k] == '0') vMem.array[x + h][y + k] = ' ';
 										openSquares (mines, &vMem, x + h, y + k);
-									}
-									else {
+									} else {
 										/* if the square is a mine */
 										buf = 1;
 										vMem.array[x + h][y + k] = '#';
@@ -440,19 +437,13 @@ int game (int xDim, int yDim, int qtyMines) {
 						/* game set to normal mode */
 						switch (op) {
 						case 1:
-							if (vMem.array[x][y] == '+' || vMem.array[x][y] == ' ') {
-								/* if square is not flagged */
-								vMem.array[x][y] = 48 + numMines (mines, x, y);
-								if (vMem.array[x][y] == '0') vMem.array[x][y] = ' ';
-								openSquares (mines, &vMem, x, y);
-							}
+							openSquares (mines, &vMem, x, y);
 							break;
 						case 2:
 							if (vMem.array[x][y] == '+') {
 								vMem.array[x][y] = 'P';
 								flagsPlaced++;
-							}
-							else if (vMem.array[x][y] == 'P') {
+							} else if (vMem.array[x][y] == 'P') {
 								vMem.array[x][y] = '+';
 								flagsPlaced--;
 							}
@@ -465,19 +456,13 @@ int game (int xDim, int yDim, int qtyMines) {
 							if (vMem.array[x][y] == '+') {
 								vMem.array[x][y] = 'P';
 								flagsPlaced++;
-							}
-							else if (vMem.array[x][y] == 'P') {
+							} else if (vMem.array[x][y] == 'P') {
 								vMem.array[x][y] = '+';
 								flagsPlaced--;
 							}
 							break;
 						case 2:
-							if (vMem.array[x][y] == '+' || vMem.array[x][y] == ' ') {
-								/* if the square is not flagged */
-								vMem.array[x][y] = 48 + numMines (mines, x, y);
-								if (vMem.array[x][y] == '0') vMem.array[x][y] = ' ';
-								openSquares (mines, &vMem, x, y);
-							}
+							openSquares (mines, &vMem, x, y);
 							break;
 						}
 					}
@@ -496,17 +481,17 @@ int game (int xDim, int yDim, int qtyMines) {
 			buf = menu ();
 			timeOffset += clock () - menuTime;
 			switch (buf) {
-			case 0:
+			case MENU_NO_INPUT:
 				action = ACTION_ESCAPE;
 				break;
-			case 1:
+			case MENU_RESTART:
 				freeBoardArray (&mines);
 				freeBoardArray (&vMem);
-				return 3;
-			case 2:
+				return GAME_RESTART;
+			case MENU_EXIT_GAME:
 				exitGame = true;
 				break;
-			case 4:
+			case MENU_TUTORIAL:
 				tutorial ();
 				break;
 			}
@@ -518,10 +503,10 @@ int game (int xDim, int yDim, int qtyMines) {
 		refresh ();
 	}
 	/* once player either has won or lost */
-	move (18, 0);
+	move (19, 0);
 
 	freeBoardArray (&mines);
 	freeBoardArray (&vMem);
-	if (action == ACTION_ESCAPE) return 2;
+	if (action == ACTION_ESCAPE) return GAME_EXIT;
 	else return isAlive;
 }

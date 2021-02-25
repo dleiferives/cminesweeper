@@ -1,4 +1,4 @@
-/* gamefunctions.cpp 
+/* gamefunctions.c
    contains definitions for game utility functions */
 
 #include <stdio.h>
@@ -129,11 +129,9 @@ int overlayMines (Board mines, Board * board) {
 	for (y = 1; y < mines.height + 2; y++) {
 		for (x = 1; x < mines.width + 2; x++) {
 			if (mines.array[x][y] == 'X') {
-				switch (board->array[x][y]) {
-				case 'P':
+				if (board->array[x][y] == 'P') {
 					board->array[x][y] = 'F';
-					break;
-				default:
+				} else {
 					board->array[x][y] = 'X';
 				}
 			}
@@ -146,13 +144,14 @@ int numMines (Board board, int x, int y) {
 	int numOfMines = 0;
 	int h, k;
 
+	/* return 0 if the coordinate being read is outside the printable board region */
+	if (x < 1 || board.width < x || y < 1 || board.height < y)
+		return 0;
+
+
 	for (k = -1; k <= 1; k++) {
 		for (h = -1; h <= 1; h++) {
-			/* check whether index is out of bounds before reading */
-			if (x + h >= 0 && x + h < board.width + 2
-				&& y + k >= 0 && y + k < board.width + 2) {
-				if (board.array[x + h][y + k] == 'X') numOfMines++;
-			}
+			if (board.array[x + h][y + k] == 'X') numOfMines++;
 		}
 	}
 
@@ -160,54 +159,44 @@ int numMines (Board board, int x, int y) {
 }
 
 int openSquares (Board mines, Board * board, int x, int y) {
-	/* All squares with 0 adjacent mines must have all adjacent squares cleared */
+	/* used for relative navigation of the board array */
 	int h, k;
-	bool freeSquares = true;
 	int neighbors = 0;
-	while (freeSquares) {
-		freeSquares = false;
-		if (board->array[x][y] != ' ') break;
-		/* do this 12 times: */
-		for (int q = 0; q < 12; q++) {
-			/* for every tile on board: */
-			for (y = 1; y < board->height + 1; y++) {
-				for (x = 1; x < board->height + 1; x++) {
-					if (board->array[x][y] == ' ') {
-						/* only if already uncovered */
-						for (k = -1; k <= 1; k++) {
-							for (h = -1; h <= 1; h++) {
-								if (board->array[x + h][y + k] != 'P') board->array[x + h][y + k] = 48 + numMines (mines, x + h, y + k);
-								if (board->array[x + h][y + k] == '0') board->array[x + h][y + k] = ' ';
-							}
-						}
-					}
-				}
-			}
-		    /* for every tile on board */
-			for (y = 1; y < board->height + 1; y++) {
-				for (x = 1; x < board->height + 1; x++) {
-					if (49 <= board->array[x][y] && board->array[x][y] <= 57) {
-						/* only if is nonzero num */
-						neighbors = 0;
-						for (k = -1; k <= 1; k++) {
-							for (h = -1; h <= 1; h++) {
+	
+	/* return if either index is outside the printable board boundaries */
+	if (x < 1 || board->width < x || y < 1 || board->height < y)
+		return -1;
 
-								if (48 <= board->array[x + h][y + k] && board->array[x + h][y + k] <= 57) {
-									neighbors++;
-								}
+	/* return if this coordinate is flagged */
+	if (board->array[x][y] == 'P')
+		return 0;
 
-							}
-						}
-						if (neighbors < 3) {
-							freeSquares = true;
-							break;
-						}
-					}
-				}
+	/* now that all is well, count the number of neighbors.
+	   note that this function assumes that there is not a mine at (x, y), 
+	   since the game function is responsible for handling that first */
+	neighbors = numMines (mines, x, y);
+	if (neighbors > 0) {
+		board->array[x][y] = '0' + neighbors;
+		return 0;
+	} else {
+		/* if this coordinate has already been marked as opened by the openSquares 
+		   function, then return, to avoid infinite recursion. Otherwise, mark it. */
+		if (board->array[x][y] == ' ')
+			return 0;
+		else
+			board->array[x][y] = ' ';
+
+		/* at this point, we know there are no mines nearby, so we will recursively
+		   keep opening squares until all the necessary squares are open. */
+		for (k = -1; k <= 1; k++) {
+			for (h = -1; h <= 1; h++) {
+				openSquares (mines, board, x + h, y + k);
 			}
 		}
-		freeSquares = false;
 	}
+
+	
+
 	return 0;
 }
 

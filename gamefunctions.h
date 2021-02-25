@@ -23,7 +23,7 @@ int overlayMines (Board mines, Board * board);
 /* returns number of mines adjacent to (x, y) */
 int numMines (Board board, int x, int y);
 
-/* uncovers squares on board starting at (x, y) */
+/* recursively uncovers squares on board starting at (x, y) */
 int openSquares (Board mines, Board * board, int x, int y);
 
 /* returns true if the minefield has been cleared */
