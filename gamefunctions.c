@@ -102,6 +102,19 @@ int printBoard (Board board) {
 	return printBoardCustom (board, false, (chtype)'X' | COLOR_PAIR(3), (chtype)'P' | COLOR_PAIR(3));
 }
 
+int printFrame (Board board) {
+	int x;
+
+	mvaddstr (0, 0, "+= Minesweeper ");
+	for (x = 4; x < board.width; x++) addstr ("==");
+	addstr ("=+");
+
+	mvaddstr (board.height + 5, 0, "+==============");
+	for (x = 4; x < board.width; x++) addstr ("==");
+	addstr ("=+");
+	return 0;
+}
+
 int initializeMines (Board * mines) {
 	int mineCount = 0;
 	int x, y;

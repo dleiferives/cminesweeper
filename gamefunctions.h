@@ -47,6 +47,9 @@ int printCtrls ();
 /* print a blank game board of dimensions defined in board */
 int printBlank (Board board);
 
+/* prints the top and bottom of the board frame for convenience */
+int printFrame (Board board);
+
 /* macros for game return codes */
 #define GAME_FAILURE    0
 #define GAME_SUCCESS    1

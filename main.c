@@ -107,8 +107,8 @@ int main (int argc, char* argv[]) {
 	while (0 <= exitCode && exitCode <= 4) {
 		clear ();
 		exitCode = game (xDim, yDim, qtyMines);
-		if (exitCode == 0 || exitCode == 1) {
-			/* if playe won or lost */
+		if (exitCode == GAME_FAILURE || exitCode == GAME_SUCCESS) {
+			/* if player won or lost */
 			echo ();
 			mvprintw (10, hudOffset, "Play again? (Y/N)");
 			mvprintw (11, hudOffset, ">");
@@ -116,14 +116,18 @@ int main (int argc, char* argv[]) {
 			
 			if (input == 'N') break;
 		}
-		if (exitCode == 2) {
+		if (exitCode == GAME_EXIT) {
 			/* if player exited manually */
 			echo ();
+			break;
 			mvprintw (10, hudOffset, "Game closed. Exit now? (Y/N)");
 			mvprintw (11, hudOffset, ">");
 			input = toupper (wgetch (stdscr));
 			if (input == 'Y' || input == 10) break;
 		}
+		/* the last option is for exitCode to equal GAME_RESTART, but we don't
+		   check against that, since the while loop would just continue to start
+		   the next game anyways. */
 	}
 	
 	endwin ();
@@ -195,18 +199,15 @@ int game (int xDim, int yDim, int qtyMines) {
 	secsLastLoop = clock ();
 
 	while (isAlive) {
-		move (0, 0);
-		addstr ("+= Minesweeper ");
-		for (x = 4; x < xDim; x++) addstr ("==");
-		addstr ("=+\n");
+		printFrame (vMem);
 		
 		if (allClear (mines, vMem)) {
 			/* only if player has won */
 			overlayMines (mines, &vMem);
 			printBoardCustom (vMem, false, (chtype)'F' | COLOR_PAIR (4), (chtype)'P' | COLOR_PAIR(3));
 			printCtrlsyx (0, hudOffset);
-			addstr ("+==============");
-			for (x = 4; x < xDim; x++) addstr ("==");
+			// addstr ("+==============");
+			// for (x = 4; x < xDim; x++) addstr ("==");
 			mvaddstr (8, hudOffset, "You won!\n");
 			mvprintw (9, hudOffset, "Time: %.3f\n", gameDur);
 			refresh ();
@@ -215,9 +216,7 @@ int game (int xDim, int yDim, int qtyMines) {
 		else {
 			printBoard (vMem);
 			printCtrlsyx (0, hudOffset);
-			addstr ("+==============");
-			for (x = 4; x < xDim; x++) addstr ("==");
-			addstr ("=+");
+			printFrame (vMem);
 		}
 
 		mvprintw (8, hudOffset, "Flags placed: %02d/%02d", flagsPlaced, qtyMines);
@@ -388,14 +387,9 @@ int game (int xDim, int yDim, int qtyMines) {
 						clearok (stdscr, 0);
 						overlayMines (mines, &vMem);
 						vMem.array[x][y] = '#';
-						addstr ("+= Minesweeper ");
-						for (x = 4; x < xDim; x++) addstr ("==");
-						addstr ("=+\n");
 						printBoard (vMem);
+						printFrame (vMem);
 						printCtrlsyx (0, hudOffset);
-						addstr ("+==============");
-						for (x = 4; x < xDim; x++) addstr ("==");
-						addstr ("=+\n");
 						mvaddstr (8, hudOffset, "You died! Game over.\n");
 						refresh ();
 						isAlive = false;
@@ -490,17 +484,40 @@ int game (int xDim, int yDim, int qtyMines) {
 			
 			buf = menu ();
 			clear ();
+			printBoard (vMem);
+			printFrame (vMem);
+			printCtrlsyx (0, hudOffset);
+
 			timeOffset += clock () - menuTime;
 			switch (buf) {
 			case MENU_NO_INPUT:
 				action = ACTION_ESCAPE;
 				break;
 			case MENU_RESTART:
+				/* ask user if they really want to restart */
+				mvprintw (10, hudOffset, "Really restart? (Y/N)");
+				mvprintw (11, hudOffset, ">");
+				buf = 0;
+				while (!(buf == 'Y' || buf == 'N'))
+					buf = toupper (getch ());
+
+				clear ();
+				if (buf == 'N') break;
+
 				freeBoardArray (&mines);
 				freeBoardArray (&vMem);
 				return GAME_RESTART;
 			case MENU_EXIT_GAME:
-				exitGame = true;
+				/* ask user if they really want to exit */
+				mvprintw (10, hudOffset, "Really exit? (Y/N)");
+				mvprintw (11, hudOffset, ">");
+				buf = 0;
+				while (!(buf == 'Y' || buf == 'N'))
+					buf = toupper (getch ());
+				if (buf == 'Y')
+					exitGame = true;
+
+				clear ();
 				break;
 			case MENU_TUTORIAL:
 				tutorial ();
@@ -520,5 +537,7 @@ int game (int xDim, int yDim, int qtyMines) {
 	freeBoardArray (&mines);
 	freeBoardArray (&vMem);
 	if (action == ACTION_ESCAPE) return GAME_EXIT;
+	/* GAME_FAILURE and GAME_SUCCESS are set to 0 and 1 respectively, hence why
+	   returning the state of isAlive works. */
 	else return isAlive;
 }
