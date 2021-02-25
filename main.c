@@ -20,6 +20,9 @@ int main (int argc, char* argv[]) {
 	int exitCode = 1;
 	int input = 0;		
 	int xDim = 9, yDim = 9, qtyMines = 10;
+	/* x-offset of where to print the HUD */
+	int hudOffset;
+
 	srand (time (0));
 	initscr ();
 	keypad (stdscr, true);
@@ -55,6 +58,10 @@ int main (int argc, char* argv[]) {
 		qtyMines = 1;
 	if (qtyMines > xDim * yDim - 1)
 		qtyMines = xDim * yDim - 1;
+	
+	/* set the offset now that the dimensions have been adjusted */
+	hudOffset = 2 * xDim + 10;
+	if (hudOffset < 18) hudOffset = 18;
 
 	start_color ();
 
@@ -103,8 +110,8 @@ int main (int argc, char* argv[]) {
 		if (exitCode == 0 || exitCode == 1) {
 			/* if playe won or lost */
 			echo ();
-			mvprintw (10, 70, "Play again? (Y/N)");
-			mvprintw (11, 70, ">");
+			mvprintw (10, hudOffset, "Play again? (Y/N)");
+			mvprintw (11, hudOffset, ">");
 			input = toupper (wgetch (stdscr));
 			
 			if (input == 'N') break;
@@ -112,8 +119,8 @@ int main (int argc, char* argv[]) {
 		if (exitCode == 2) {
 			/* if player exited manually */
 			echo ();
-			mvprintw (10, 70, "Game closed. Exit now? (Y/N)");
-			mvprintw (11, 70, ">");
+			mvprintw (10, hudOffset, "Game closed. Exit now? (Y/N)");
+			mvprintw (11, hudOffset, ">");
 			input = toupper (wgetch (stdscr));
 			if (input == 'Y' || input == 10) break;
 		}
@@ -128,6 +135,9 @@ int game (int xDim, int yDim, int qtyMines) {
 	int x = 0, y = 0, h, k;
 	/* cursor coordinates: initialized at top left of game board */
 	int cx = 5, cy = 3;
+	/* x-offset of where to print the HUD */
+	int hudOffset = 2 * xDim + 10;
+	if (hudOffset < 18) hudOffset = 18;
 	/* mouse event */
 	MEVENT m_event;
 	/* bools storing info about the game state */
@@ -194,24 +204,24 @@ int game (int xDim, int yDim, int qtyMines) {
 			/* only if player has won */
 			overlayMines (mines, &vMem);
 			printBoardCustom (vMem, false, (chtype)'F' | COLOR_PAIR (4), (chtype)'P' | COLOR_PAIR(3));
-			printCtrlsyx (0, 70);
+			printCtrlsyx (0, hudOffset);
 			addstr ("+==============");
 			for (x = 4; x < xDim; x++) addstr ("==");
-			mvaddstr (8, 70, "You won!\n");
-			mvprintw (9, 70, "Time: %.3f\n", gameDur);
+			mvaddstr (8, hudOffset, "You won!\n");
+			mvprintw (9, hudOffset, "Time: %.3f\n", gameDur);
 			refresh ();
 			break;
 		}
 		else {
 			printBoard (vMem);
-			printCtrlsyx (0, 70);
+			printCtrlsyx (0, hudOffset);
 			addstr ("+==============");
 			for (x = 4; x < xDim; x++) addstr ("==");
-			addstr ("=+\n");
+			addstr ("=+");
 		}
 
-		mvprintw (8, 70, "Flags placed: %02d/%02d", flagsPlaced, qtyMines);
-		mvprintw (9, 70, "Mode: ");
+		mvprintw (8, hudOffset, "Flags placed: %02d/%02d", flagsPlaced, qtyMines);
+		mvprintw (9, hudOffset, "Mode: ");
 		if (isFlagMode) printw ("Flag   | ");
 		else printw ("Normal | ");
 		if (!firstClick) gameDur = 0;
@@ -382,11 +392,11 @@ int game (int xDim, int yDim, int qtyMines) {
 						for (x = 4; x < xDim; x++) addstr ("==");
 						addstr ("=+\n");
 						printBoard (vMem);
-						printCtrlsyx (0, 70);
+						printCtrlsyx (0, hudOffset);
 						addstr ("+==============");
 						for (x = 4; x < xDim; x++) addstr ("==");
 						addstr ("=+\n");
-						mvaddstr (8, 70, "You died! Game over.\n");
+						mvaddstr (8, hudOffset, "You died! Game over.\n");
 						refresh ();
 						isAlive = false;
 						setBreak = true;
@@ -422,8 +432,8 @@ int game (int xDim, int yDim, int qtyMines) {
 							overlayMines (mines, &vMem);
 							move (1, 0);
 							printBoard (vMem);
-							printCtrlsyx (0, 70);
-							mvaddstr (8, 70, "You died! Game over.\n");
+							printCtrlsyx (0, hudOffset);
+							mvaddstr (8, hudOffset, "You died! Game over.\n");
 							refresh ();
 							isAlive = false;
 							setBreak = true;
@@ -479,6 +489,7 @@ int game (int xDim, int yDim, int qtyMines) {
 			printBlank (vMem);
 			
 			buf = menu ();
+			clear ();
 			timeOffset += clock () - menuTime;
 			switch (buf) {
 			case MENU_NO_INPUT:
@@ -493,6 +504,7 @@ int game (int xDim, int yDim, int qtyMines) {
 				break;
 			case MENU_TUTORIAL:
 				tutorial ();
+				clear ();
 				break;
 			}
 			break;

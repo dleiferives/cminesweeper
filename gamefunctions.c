@@ -91,7 +91,8 @@ int printBoardCustom (Board board, bool hide, chtype mineChar, chtype flagChar) 
 	printw ("   ");
 	if (board.width < 4)
 		for (x = 0; x < (4 - board.width); x++) printw ("  ");
-	printw ("|\n");
+	addch ('|');
+	move(++line, 0);
 	
 	refresh ();
 	return chars;
