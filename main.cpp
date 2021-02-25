@@ -123,11 +123,10 @@ int main (int argc, char* argv[]) {
 	return 0;
 }
 
-int game (int yDim, int xDim, int qtyMines) {
+int game (int xDim, int yDim, int qtyMines) {
 	/* used for array reading/writing */
-	int x = 0, y = 0;
-	int h, k;
-	/* used for console navigation: initialized at top left of game board */
+	int x = 0, y = 0, h, k;
+	/* cursor coordinates: initialized at top left of game board */
 	int cx = 5, cy = 3;
 	/* mouse event */
 	MEVENT m_event;
@@ -139,12 +138,14 @@ int game (int yDim, int xDim, int qtyMines) {
 	/* game duration */
 	double gameDur = 0;
 
+	/* struct storing locations of mines */
 	Board mines;
 	mines.width = xDim;
 	mines.height = yDim;
 	mines.mineCount = qtyMines;
 	initBoardArray (&mines);
 
+	/* struct storing the state of the game board */
 	Board vMem;
 	vMem.width = xDim;
 	vMem.height = yDim;
@@ -192,8 +193,8 @@ int game (int yDim, int xDim, int qtyMines) {
 		if (allClear (mines, vMem)) {
 			/* only if player has won */
 			overlayMines (mines, &vMem);
-			printBoard (vMem, false, (chtype)'F' | COLOR_PAIR (4));
-			printCtrls (0, 70);
+			printBoardCustom (vMem, false, (chtype)'F' | COLOR_PAIR (4), (chtype)'P' | COLOR_PAIR(3));
+			printCtrlsyx (0, 70);
 			addstr ("+==============");
 			for (x = 4; x < xDim; x++) addstr ("==");
 			mvaddstr (8, 70, "You won!\n");
@@ -203,7 +204,7 @@ int game (int yDim, int xDim, int qtyMines) {
 		}
 		else {
 			printBoard (vMem);
-			printCtrls (0, 70);
+			printCtrlsyx (0, 70);
 			addstr ("+==============");
 			for (x = 4; x < xDim; x++) addstr ("==");
 			addstr ("=+\n");
@@ -381,7 +382,7 @@ int game (int yDim, int xDim, int qtyMines) {
 						for (x = 4; x < xDim; x++) addstr ("==");
 						addstr ("=+\n");
 						printBoard (vMem);
-						printCtrls (0, 70);
+						printCtrlsyx (0, 70);
 						addstr ("+==============");
 						for (x = 4; x < xDim; x++) addstr ("==");
 						addstr ("=+\n");
@@ -407,7 +408,7 @@ int game (int yDim, int xDim, int qtyMines) {
 								/* for each adjacent square */
 								if (vMem.array[x + h][y + k] == '+') {
 									if (mines.array[x + h][y + k] != 'X') {
-										/* if the square is not s mine */
+										/* if the square is not a mine */
 										vMem.array[x + h][y + k] = numMines (mines, x + h, y + k) + 48;
 										if (vMem.array[x + h][y + k] == '0') vMem.array[x + h][y + k] = ' ';
 										openSquares (mines, &vMem, x + h, y + k);
@@ -424,7 +425,7 @@ int game (int yDim, int xDim, int qtyMines) {
 							overlayMines (mines, &vMem);
 							move (1, 0);
 							printBoard (vMem);
-							printCtrls (0, 70);
+							printCtrlsyx (0, 70);
 							mvaddstr (8, 70, "You died! Game over.\n");
 							refresh ();
 							isAlive = false;
@@ -490,7 +491,8 @@ int game (int yDim, int xDim, int qtyMines) {
 		case ACTION_ESCAPE:
 			/* open the pause menu */
 			menuTime = clock ();
-			printBlank (yDim, xDim);
+			printBlank (vMem);
+			
 			buf = menu ();
 			timeOffset += clock () - menuTime;
 			switch (buf) {

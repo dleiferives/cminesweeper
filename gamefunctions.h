@@ -7,19 +7,45 @@
 #include <curses.h>
 #include "board.h"
 
-int printBoard (Board, bool = false, chtype = (chtype)'X' | COLOR_PAIR(3), chtype = (chtype)'P' | COLOR_PAIR(3));
-int initializeMines (Board *);
-int overlayMines (Board, Board *);
-int numMines (Board, int, int);
-int openSquares (Board, Board *, int = 9, int = 9);
-bool allClear (Board, Board);
-/* returns 0 on game failure, 1 on success, 2 on manual exit, 3 on restart */
-int game (int = 9, int = 9, int = 10);
-/* returns 0 on no input, 1 on restart, 2 on exit, 3 on tutorial */
+/* display a graphical representation of board, displaying mines as mineChar 
+   and displaying flags as flagChar, unless hide is set to true */
+int printBoardCustom (Board board, bool hide, chtype mineChar, chtype flagChar);
+
+/* printBoard with default arguments for hide, mineChar, and flagChar */
+int printBoard (Board board);
+
+/* randomize locations of mines on the board */
+int initializeMines (Board * mines);
+
+/* overlay the locations of mines onto the game board */
+int overlayMines (Board mines, Board * board);
+
+/* returns number of mines adjacent to (x, y) */
+int numMines (Board board, int x, int y);
+
+/* uncovers squares on board starting at (x, y) */
+int openSquares (Board mines, Board * board, int x, int y);
+
+/* returns true if the minefield has been cleared */
+bool allClear (Board mines, Board board);
+
+/* returns 0 on game loss, 1 on success, 2 on manual exit, 3 on restart */
+int game (int xDim, int yDim, int qtyMines);
+
+/* returns 0 if no input, 1 to restart game, 2 to exit game, 3 to play tutorial */
 int menu ();
+
+/* play the game tutorial */
 int tutorial ();
-int printCtrls (int = 3, int = 29);
-int printBlank (int, int);
+
+/* print user controls with the top left corner at (y, x) */
+int printCtrlsyx (int y, int x);
+
+/* printCtrls with default location at (3, 29) */
+int printCtrls ();
+
+/* print a blank game board of dimensions defined in board */
+int printBlank (Board board);
 
 /* macros for game return codes */
 #define GAME_FAILURE    0

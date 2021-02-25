@@ -9,11 +9,12 @@
 #include "gamefunctions.h"
 #include "board.h"
 
-int printBoard (Board board, bool hide, chtype mineChar, chtype flagChar) {
+int printBoardCustom (Board board, bool hide, chtype mineChar, chtype flagChar) {
 	int chars = 0;
 	int x, y;
+	int line = 1;
 
-	printw ("|  ");
+	mvprintw (line, 0, "|  ");
 	for (x = 0; x <= board.width; x++) {
 		if (x % 5 == 0) printw ("%02d", x);
 		else printw ("  ");
@@ -21,8 +22,9 @@ int printBoard (Board board, bool hide, chtype mineChar, chtype flagChar) {
 	printw ("   ");
 	if (board.width < 4)
 		for (x = 0; x < (4 - board.width); x++) printw ("  ");
-	printw ("|\n|  ");
-
+	addch ('|' | COLOR_PAIR (1));
+	
+	mvprintw(++line, 0, "|  ");
 	for (x = 0; x <= board.width; x++) {
 		if (x % 5 == 0) printw ("| ");
 		else printw (". ");
@@ -30,10 +32,11 @@ int printBoard (Board board, bool hide, chtype mineChar, chtype flagChar) {
 	printw ("   ");
 	if (board.width < 4)
 		for (x = 0; x < (4 - board.width); x++) printw ("  ");
-	printw ("|\n");
+	addch ('|' | COLOR_PAIR (1));
+
 
 	for (y = 1; y <= board.height; y++) {
-		printw ("|%02d-", y);
+		mvprintw (++line, 0, "|%02d-", y);
 		for (x = 1; x <= board.width; x++) {
 			addch (' ');
 			if (hide) addch ('+');
@@ -68,9 +71,9 @@ int printBoard (Board board, bool hide, chtype mineChar, chtype flagChar) {
 		printw ("-%02d", y);
 		if (board.width < 4)
 			for (x = 0; x < (4 - board.width); x++) printw ("  ");
-		printw ("|\n");
+		addch ('|' | COLOR_PAIR (1));
 	}
-	printw ("|  ");
+	mvprintw (++line, 0, "|  ");
 	for (x = 0; x <= board.width; x++) {
 		if (x % 5 == 0) printw ("| ");
 		else printw ("' ");
@@ -78,7 +81,9 @@ int printBoard (Board board, bool hide, chtype mineChar, chtype flagChar) {
 	printw ("   ");
 	if (board.width < 4)
 		for (x = 0; x < (4 - board.width); x++) printw ("  ");
-	printw ("|\n|  ");
+	addch ('|' | COLOR_PAIR (1));
+	
+	mvprintw (++line, 0, "|  ");
 	for (x = 0; x <= board.width; x++) {
 		if (x % 5 == 0) printw ("%02d", x);
 		else printw ("  ");
@@ -90,6 +95,10 @@ int printBoard (Board board, bool hide, chtype mineChar, chtype flagChar) {
 	
 	refresh ();
 	return chars;
+}
+
+int printBoard (Board board) {
+	return printBoardCustom (board, false, (chtype)'X' | COLOR_PAIR(3), (chtype)'P' | COLOR_PAIR(3));
 }
 
 int initializeMines (Board * mines) {
@@ -115,7 +124,6 @@ int initializeMines (Board * mines) {
 	return mineCount;
 }
 
-/* overlays mines on game board */
 int overlayMines (Board mines, Board * board) {
 	int x, y;
 	for (y = 1; y < mines.height + 2; y++) {
@@ -134,7 +142,6 @@ int overlayMines (Board mines, Board * board) {
 	return 0;
 }
 
-/* calculate number of mines adjacent to square */
 int numMines (Board board, int x, int y) {
 	int numOfMines = 0;
 	int h, k;
@@ -400,75 +407,25 @@ int tutorial () {
 	return 0;
 }
 
-int printCtrls (int y, int x) {
+int printCtrlsyx (int y, int x) {
 	int cy, cx;
 	getyx (stdscr, cy, cx);
-	mvaddstr (y++, x, "+============= Controls =============+\n");
-	mvaddstr (y++, x, "| W A S D  : navigate the field      |\n");
-	mvaddstr (y++, x, "| /  MOUSE1: primary select button   |\n");
-	mvaddstr (y++, x, "| '  MOUSE2: secondary select button |\n");
-	mvaddstr (y++, x, "| M  Space : toggle flagging mode    |\n");
-	mvaddstr (y++, x, "| Q  Esc   : pause game              |\n");
+	mvaddstr (y++, x, "+============= Controls =============+");
+	mvaddstr (y++, x, "| W A S D  : navigate the field      |");
+	mvaddstr (y++, x, "| /  MOUSE1: primary select button   |");
+	mvaddstr (y++, x, "| '  MOUSE2: secondary select button |");
+	mvaddstr (y++, x, "| M  Space : toggle flagging mode    |");
+	mvaddstr (y++, x, "| Q  Esc   : pause game              |");
 	mvaddstr (y++, x, "+====================================+");
 	move (cy, cx);
 
 	return 0;
 }
 
-int printBlank (int yDim, int xDim) {
-	int x, y;
-	int line = 1;
+int printCtrls () {
+    return printCtrlsyx (3, 29);
+}
 
-	mvprintw (line, 0, "|  ");
-	for (x = 0; x <= xDim; x++) {
-		if (x % 5 == 0) printw ("%02d", x);
-		else printw ("  ");
-	}
-	if (xDim < 4)
-		for (x = 0; x < (4 - xDim); x++) printw ("  ");
-	mvprintw (line++, 0, "   |");
-
-	mvprintw (line, 0, "|  ");
-	for (x = 0; x <= xDim; x++) {
-		if (x % 5 == 0) printw ("| ");
-		else printw (". ");
-	}
-	if (xDim < 4)
-		for (x = 0; x < (4 - xDim); x++) printw ("  ");
-	mvprintw (line++, 0, "   |");
-
-	for (y = 1; y <= yDim; y++) {
-		mvprintw (line, 0, "|%02d-", y);
-		for (x = 1; x <= xDim; x++) {
-			addstr (" +");
-		}
-		addch (' ' | COLOR_PAIR (1));
-		printw ("-%02d", y);
-		if (xDim < 4)
-			for (x = 0; x < (4 - xDim); x++) printw ("  ");
-		printw ("|");
-		move (line++, 0);
-	}
-
-	mvprintw (line, 0, "|  ");
-	for (x = 0; x <= xDim; x++) {
-		if (x % 5 == 0) printw ("| ");
-		else printw ("' ");
-	}
-	if (xDim < 4)
-		for (x = 0; x < (4 - xDim); x++) printw ("  ");
-	printw ("   |");
-	move (line++, 0);
-
-	mvprintw (line, 0,"|  ");
-	for (x = 0; x <= xDim; x++) {
-		if (x % 5 == 0) printw ("%02d", x);
-		else printw ("  ");
-	}
-	if (xDim < 4)
-		for (x = 0; x < (4 - xDim); x++) printw ("  ");
-	printw ("   |");
-
-	refresh ();
-	return yDim * xDim;
+int printBlank (Board board) {
+	return printBoardCustom (board, true, (chtype)0, (chtype)0);
 }
