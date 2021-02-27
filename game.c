@@ -5,15 +5,24 @@
 #include <curses.h>
 #include <math.h>	/* floorf */
 #include <ctype.h>	/* toupper */
-#include <time.h>	/* clock */
+#include <time.h>	/* timespec, clock_gettime */
 
 #include "gamefunctions.h"
 #include "board.h"
 #include "savegame.h"
 
+#include <unistd.h>	/* sleep */
+/* use a define statement because sleep isn't portable to windows */
+#define uSleep(val) usleep(val)
+
+/* utility functions for timespec */
+void subtractTimespec (struct timespec * dest, struct timespec * src);	/* adds src to dest */
+void addTimespec (struct timespec * dest, struct timespec * src);		/* subtracts src from dest */
+double timespecToDouble (struct timespec spec);							/* converts a timespec interval to a float value */
+
 int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	/*** INITIALIZATION ***/
-
+	
 	/* used for array reading/writing */
 	int x = 0, y = 0, h, k;
 	/* cursor coordinates */
@@ -45,10 +54,11 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	uint8_t op = 0;
 	/* stores what action will be performed by the game */
 	uint8_t action = ACTION_NONE;
-	/* variables for timekeeping */
-	clock_t secsLastLoop = 0;
-	clock_t timeOffset;
-	clock_t menuTime;
+	/* structs for timekeeping */
+	struct timespec timeLastLoop;	/* stores time at last iteration of loop */
+	struct timespec timeOffset;		/* running counter to adjust time calculation */
+	struct timespec timeMenu;		/* time spent in the menu */
+	struct timespec timeBuffer;		/* buffer used in time calculations */
 
 	int buf = -1;
 	
@@ -72,7 +82,8 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		flagsPlaced = save.flagsPlaced;
 		cy = save.cy;
 		cx = save.cx;
-		timeOffset = -save.timeOffset;
+		timeOffset.tv_sec = -save.timeOffset.tv_sec;
+		timeOffset.tv_nsec = -save.timeOffset.tv_nsec;
 		/* then initialize the boards */
 		mines.width = vMem.width = xDim;
 		mines.height = vMem.height = yDim;
@@ -89,7 +100,8 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		firstClick = false;
 		/* cursor will be initialized at top left of game board */
 		cy = 3, cx = 5;
-		timeOffset = 0;
+		timeOffset.tv_sec = 0;
+		timeOffset.tv_nsec = 0;
 		/* initialize the boards */
 		mines.width = vMem.width = xDim;
 		mines.height = vMem.height = yDim;
@@ -104,8 +116,11 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 
 	noecho ();
 	clear ();
-	secsLastLoop = clock ();
-	gameDur = (clock () - timeOffset) / (float) CLOCKS_PER_SEC;
+	//secsLastLoop = clock ();
+	clock_gettime (CLOCK_MONOTONIC, &timeLastLoop);
+	clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
+	subtractTimespec (&timeBuffer, &timeOffset);
+	gameDur = timespecToDouble (timeBuffer);
 
 	while (isAlive) {
 		printFrame (vMem);
@@ -150,8 +165,10 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		move (cy, cx);
 		noecho ();
 		if (!firstClick) {
-			timeOffset = clock ();
-			secsLastLoop = clock ();
+			//timeOffset = clock ();
+			clock_gettime (CLOCK_MONOTONIC, &timeOffset);
+			clock_gettime (CLOCK_MONOTONIC, &timeLastLoop);
+			//secsLastLoop = clock ();
 		}
 
 		/* set cursor to very visible */
@@ -163,13 +180,19 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		while (!gotInput) {
 			/* arrow key input */
 			buf = -1;
+			/* THIS IS WHERE A LOT OF PROCESSOR TIME IS USED: */
 			while (buf < 0) {
-				/* do until valid input is received */
-				buf = wgetch (stdscr);
+				/* do until valid input is received (getch returns -1 if none is ready) */
+				buf = getch ();
+				uSleep (16666); /* sleep 1/60th of a second */
 				/* if one second has passed since the last clock refresh: */
-				if (clock () - secsLastLoop > CLOCKS_PER_SEC) {
+				clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
+				subtractTimespec (&timeBuffer, &timeLastLoop);
+				if (timespecToDouble (timeBuffer) > 1) {
 					action = ACTION_INC_TIME;
-					gameDur = (clock () - timeOffset) / (float) CLOCKS_PER_SEC;
+					clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
+					subtractTimespec (&timeBuffer, &timeOffset);
+					gameDur = timespecToDouble (timeBuffer);
 					break;
 				}
 			}
@@ -390,7 +413,8 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			break;
 		case ACTION_ESCAPE:
 			/* open the pause menu */
-			menuTime = clock ();
+			clock_gettime (CLOCK_MONOTONIC, &timeMenu);
+			//menuTime = clock ();
 			printBlank (vMem);
 			
 			buf = menu (5, "Paused",
@@ -406,7 +430,11 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			printBlank (vMem);
 			printCtrlsyx (0, hudOffset);
 
-			timeOffset += clock () - menuTime;
+			/* increment the time offset by the amount of time spent in menu */
+			clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
+			subtractTimespec (&timeBuffer, &timeMenu);
+			addTimespec (&timeOffset, &timeBuffer);
+
 			switch (buf) {
 			case -1:
 			case MENU_NO_INPUT:
@@ -460,7 +488,9 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 					save.gameBools |= MASK_FIRST_CLICK;
 				save.cy = cy;
 				save.cx = cx;
-				save.timeOffset = clock () - timeOffset;
+				clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
+				subtractTimespec (&timeBuffer, &timeOffset);
+				save.timeOffset = timeBuffer;
 				setGameData (mines, vMem, &save);
 				buf = writeSaveFile ("savefile", save);
 				free (save.gameData);
@@ -472,7 +502,8 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			}
 			break;
 		case ACTION_INC_TIME:
-			secsLastLoop = clock ();
+			clock_gettime (CLOCK_MONOTONIC, &timeLastLoop);
+			//secsLastLoop = clock ();
 		}
 		if (setBreak) break;
 		refresh ();
@@ -486,4 +517,37 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	/* GAME_FAILURE and GAME_SUCCESS are set to 0 and 1 respectively, hence why
 	   returning the state of isAlive works. */
 	else return isAlive;
+}
+
+void subtractTimespec (struct timespec * dest, struct timespec * src) {
+	dest->tv_sec -= src->tv_sec;
+	if (dest->tv_nsec - src->tv_nsec < 0) {
+		/* borrow */
+		dest->tv_sec--;
+		dest->tv_nsec = src->tv_nsec - dest->tv_nsec;
+	}
+	else {
+		dest->tv_nsec -= src->tv_nsec;
+	}
+	return;
+}
+
+void addTimespec (struct timespec * dest, struct timespec * src) {
+	dest->tv_sec += src->tv_sec;
+	if (dest->tv_nsec + src->tv_nsec > 999999999) {
+		/* carry */
+		dest->tv_sec++;
+		dest->tv_nsec = src->tv_nsec - dest->tv_nsec;
+	}
+	else {
+		dest->tv_nsec += src->tv_nsec;
+	}
+	return;
+}
+
+double timespecToDouble (struct timespec spec) {
+	double result;
+	result += spec.tv_sec;
+	result += spec.tv_nsec / 1.0e9;
+	return result;
 }

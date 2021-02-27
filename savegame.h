@@ -5,7 +5,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <time.h>	/* clock_t */
+#include <time.h>	/* timespec */
 #include "board.h"
 
 #define MASK_FLAG_MODE		0x01
@@ -19,7 +19,7 @@ typedef struct {
 	int32_t flagsPlaced;	/* flags placed by user */
 	uint32_t gameBools;		/* integer storing the state of in-game bools */
 	int32_t cy, cx;			/* cursor coordinates */
-	clock_t timeOffset;		/* game duration in seconds */
+	struct timespec timeOffset;		/* game duration in seconds */
 	uint8_t * gameData;		/* string of bytes storing board and mine data */
 } Savegame;
 
