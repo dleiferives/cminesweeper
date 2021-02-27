@@ -119,9 +119,9 @@ int initializeMines (Board * mines) {
 	int mineCount = 0;
 	int x, y;
 
-	for (y = 0; y < mines->height + 2; y++) {
-		for (x = 0; x < mines->width + 2; x++) {
-			mines->array[x][y] = '.';
+	for (y = 1; y < mines->height + 1; y++) {
+		for (x = 1; x < mines->width + 1; x++) {
+			mines->array[x][y] = '+';
 		}
 	}
 
@@ -219,7 +219,7 @@ bool allClear (Board mines, Board board) {
 
 	for (y = 1; y <= mines.height; y++) {
 		for (x = 1; x <= mines.width; x++) {
-			if (mines.array[x][y] == '.' && (board.array[x][y] == '+' || board.array[x][y] == 'P')) {
+			if (mines.array[x][y] == '+' && (board.array[x][y] == '+' || board.array[x][y] == 'P')) {
 				return false;
 			}
 		}
@@ -241,16 +241,14 @@ int menu () {
 		mvprintw (1, 0, "|                         |");
 		mvprintw (2, 0, "|  1) Return to game      |");
 		mvprintw (3, 0, "|  2) New game            |");
-		mvprintw (4, 0, "|  3) Exit game           |");
-		mvprintw (5, 0, "|  4) View Tutorial       |");
-		mvprintw (6, 0, "|                         |");
-		mvprintw (7, 0, "+=========================+");
+		mvprintw (4, 0, "|  3) Save game           |");
+		mvprintw (5, 0, "|  4) Exit game           |");
+		mvprintw (6, 0, "|  5) View Tutorial       |");
+		mvprintw (7, 0, "|                         |");
+		mvprintw (8, 0, "+=========================+");
 
 		/* draw option pointer */
-		for (int x = 0; x < 4; x++) {
-			if (option == x) mvaddch (2 + x, 5, '>' | A_BLINK);
-			else mvaddch (2 + x, 5, ' ');
-		}
+		mvaddch (option + 2, 5, '>' | A_BLINK);
 
 		refresh ();
 
@@ -270,42 +268,42 @@ int menu () {
 			gotInput = true;
 			break;
 		case '3':
-			option = MENU_EXIT_GAME;
+			option = MENU_SAVE_GAME;
 			gotInput = true;
 			break;
 		case '4':
+			option = MENU_EXIT_GAME;
+			gotInput = true;
+			break;
+		case '5':
 			option = MENU_TUTORIAL;
 			gotInput = true;
 			break;
 		case 10: /* key code for Return */
 			gotInput = true;
 			break;
-		case 32: /* key code for space */
-			gotInput = false;
-			break;
+		case 'w':
 		case KEY_UP:
 			option--;
 			if (option < 0) option = 0;
 			break;
+		case 'a':
 		case KEY_LEFT:
 			option--;
 			if (option < 0) option = 0;
 			break;
+		case 's':
 		case KEY_DOWN:
 			option++;
-			if (option > 3) option = 3;
+			if (option > 4) option = 4;
 			break;
+		case 'd':
 		case KEY_RIGHT:
 			option++;
-			if (option > 3) option = 3;
+			if (option > 4) option = 4;
 			break;
 		}
 	}
-
-	if (option == MENU_TUTORIAL) {
-		tutorial ();
-	}
-	
 	/* set cursor to visible */
 	curs_set (1);
 	return option;
@@ -331,12 +329,12 @@ int tutorial () {
 	curs_set (1);
 
 	/* initialize boards */
-	for (y = 1; y <= 10; y++) {
-		for (x = 1; x <= 10; x++) {
-			mines.array[x][y] = '.';
-			vMem.array[x][y] = '+';
-		}
-	}
+	// for (y = 1; y <= 10; y++) {
+	// 	for (x = 1; x <= 10; x++) {
+	// 		mines.array[x][y] = '+';
+	// 		vMem.array[x][y] = '+';
+	// 	}
+	// }
 
 	/* write mine data to mine struct */
 	for (x = 0; x < 10; x++) {

@@ -6,6 +6,7 @@
 
 #include <curses.h>
 #include "board.h"
+#include "savegame.h"
 
 /* display a graphical representation of board, displaying mines as mineChar 
    and displaying flags as flagChar, unless hide is set to true */
@@ -29,8 +30,10 @@ int openSquares (Board mines, Board * board, int x, int y);
 /* returns true if the minefield has been cleared */
 bool allClear (Board mines, Board board);
 
-/* returns 0 on game loss, 1 on success, 2 on manual exit, 3 on restart */
-int game (int xDim, int yDim, int qtyMines);
+/* returns 0 on game loss, 1 on success, 2 on manual exit, 3 on restart.
+   If save is not NULL, then xDim, yDim and qtyMines will be used to 
+   initialize the game. */
+int game (int xDim, int yDim, int qtyMines, Savegame * saveptr);
 
 /* returns 0 if no input, 1 to restart game, 2 to exit game, 3 to play tutorial */
 int menu ();
@@ -51,19 +54,20 @@ int printBlank (Board board);
 int printFrame (Board board);
 
 /* macros for game return codes */
-#define GAME_FAILURE    0
-#define GAME_SUCCESS    1
-#define GAME_EXIT       2
-#define GAME_RESTART    3
+#define GAME_FAILURE	0
+#define GAME_SUCCESS	1
+#define GAME_EXIT		2
+#define GAME_RESTART	3
 
 /* macros for menu return codes */
-#define MENU_NO_INPUT   0
-#define MENU_RESTART    1
-#define MENU_EXIT_GAME  2
-#define MENU_TUTORIAL   3
+#define MENU_NO_INPUT	0
+#define MENU_RESTART	1
+#define MENU_SAVE_GAME	2
+#define MENU_EXIT_GAME	3
+#define MENU_TUTORIAL	4
 
 /* macros for game actions */
-#define ACTION_NONE 	0
+#define ACTION_NONE		0
 #define ACTION_BOARD_OP	1
 #define ACTION_CHG_MODE	2
 #define ACTION_ESCAPE	3
