@@ -1,9 +1,5 @@
 /* main.c */
 
-/* TODO:
-   write a function to draw a menu based on a number of options,
-   which returns the index of the option chosen */
-
 #include <stdlib.h>	
 #include <stdio.h>	
 #include <curses.h>	
@@ -88,102 +84,37 @@ int main (int argc, char* argv[]) {
 		if (!saveFileExists) 
 			gotInput = true;
 		/* always default to first option (new game) */
-		option = 0;
-		while (!gotInput) {
-			/* menu defaults to first option */
-			mvprintw (0, 0, "Welcome to Minesweeper!\n\n");
-			mvprintw (1, 0, " 1) New game");
-			mvprintw (2, 0, " 2) Load game");
-
-			/* draw option pointer */
-			mvaddch (option + 1, 3, '>' | A_BLINK);
-
-			refresh();
-			
-			input = getch ();
-			switch (input) {
-			case 'q':
-			case 27: /* key code for Esc */
-				option = -1;
-				exitCode = -1;
-				gotInput = true;
-				break;
-			case '1':
-				/* new game */
-				option = 0;
-				gotInput = true;
-				break;
-			case '2':
-				/* load game */
-				option = 1;
-				gotInput = true;
-				break;
-			case 10: /* key code for Return */
-				/* selects the current option */
-				gotInput = true;
-				break;
-			case 'w':
-			case KEY_UP:
-				option--;
-				if (option < 0) option = 0;
-				break;
-			case 'a':
-			case KEY_LEFT:
-				option--;
-				if (option < 0) option = 0;
-				break;
-			case 's':
-			case KEY_DOWN:
-				option++;
-				if (option > 1) option = 1;
-				break;
-			case 'd':
-			case KEY_RIGHT:
-				option++;
-				if (option > 1) option = 1;
-				break;
-			}
-		}
+		option = menu (2, "Welcome to Minesweeper!", "New game", "Load game");
+		if (option == -1)
+			exitCode = -1;
 
 		if (option == 0) {
 			/* user chooses to start new game */
 			saveptr = NULL;
 
-			mvprintw (0, 0, "Choose difficulty:\n");
-			printw ("1) Beginner    : 9x9, 10 mines\n");
-			printw ("2) Intermediate: 16x16, 40 mines\n");
-			printw ("3) Advanced    : 30x24, 99 mines\n>");
+			option = menu (3, "Choose difficulty",
+				"Beginner    : 9x9, 10 mines",
+				"Intermediate: 16x16, 40 mines",
+				"Advanced    : 30x24, 99 mines");
 
-			input = 0;
-			while (!(('1' <= input && input <= '3') || input == 'Q'))
-				input = toupper (getch ());
-
-			switch (input) {
-			case '1':
+			switch (option) {
+			case -1:
+				exitCode = -1;
+				break;
+			case 0:
 				xDim = 9;
 				yDim = 9;
 				qtyMines = 10;
 				break;
-			case '2':
+			case 1:
 				xDim = 16;
 				yDim = 16;
 				qtyMines = 40;
 				break;
-			case '3':
+			case 2:
 				xDim = 30;
 				yDim = 24;
 				qtyMines = 99;
-				break;
-			// case '4':
-			// 	break;
-			case 'Q':
-			case 27:
-				exitCode = -1;
-				break;
-			default:
-				xDim = 9;
-				yDim = 9;
-				qtyMines = 10;
 				break;
 			}
 		} else {

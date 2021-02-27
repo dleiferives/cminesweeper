@@ -393,7 +393,13 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			menuTime = clock ();
 			printBlank (vMem);
 			
-			buf = menu ();
+			buf = menu (5, "Paused",
+				"Return to game",
+				"New game",
+				"Save game",
+				"Exit game",
+				"View tutorial");
+
 			clear ();
 			// printBoard (vMem);
 			printFrame (vMem);
@@ -402,6 +408,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 
 			timeOffset += clock () - menuTime;
 			switch (buf) {
+			case -1:
 			case MENU_NO_INPUT:
 				action = ACTION_ESCAPE;
 				break;

@@ -4,7 +4,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdarg.h>
+#include <stdbool.h>
 #include <curses.h>
+#include <ctype.h>	/* toupper */
+#include <string.h>	/* strlen */
 
 #include "gamefunctions.h"
 #include "board.h"
@@ -228,84 +232,117 @@ bool allClear (Board mines, Board board) {
 	return true;
 }
 
-int menu () {
-	bool gotInput = false;
+int menu (int optc, const char * title, ...) {
+	int i, x; /* counting variables */
+	size_t maxLength;
+	/* string array to hold option names */
+	const char ** optionNames = malloc (optc * sizeof (char *));
+	/* array to cache string lengths to avoid calling strlen multiple times */
+	size_t * optionLengths = malloc (optc * sizeof (size_t));
+	size_t titleLength;
+
+	/* variables for navigating the menu */
+	bool gotInput = false; /* the user has made a choice */
 	int buf = 0;
-	int8_t option = MENU_NO_INPUT;
-	/* set cursor to invisible */
-	curs_set (0);
+	int option = 0;
+
+	va_list options;
+	va_start (options, title);
+	
+	/* populate the string array using the varargs */
+	for (i = 0; i < optc; i++)
+		optionNames[i] = va_arg (options, char *);
+	va_end (options);
+
+	/* calculate the width of the box necessary to fit all options */
+	/* title margin is 3 characters left of options and has 1 padding */
+	titleLength = strlen (title) - 2;
+	maxLength = titleLength;
+
+	for (i = 0; i < optc; i++) {
+		optionLengths[i] = strlen (optionNames[i]);
+		if (optionLengths[i] > maxLength) {
+			maxLength = optionLengths[i];
+		}
+	}
+
+	curs_set (0); /* cursor invisible */
 
 	while (!gotInput) {
-		/* get arrow key input */
-		mvprintw (0, 0, "+= Paused ================+");
-		mvprintw (1, 0, "|                         |");
-		mvprintw (2, 0, "|  1) Return to game      |");
-		mvprintw (3, 0, "|  2) New game            |");
-		mvprintw (4, 0, "|  3) Save game           |");
-		mvprintw (5, 0, "|  4) Exit game           |");
-		mvprintw (6, 0, "|  5) View Tutorial       |");
-		mvprintw (7, 0, "|                         |");
-		mvprintw (8, 0, "+=========================+");
+		/* print the menu */
+		/* start with top of border */
+		mvprintw (0, 0, "+= %s ", title);
+		for (x = 0; x < maxLength - titleLength; x++)
+			addch ('=');
+		addstr ("=+");
+
+		/* blank space */
+		mvaddstr (1, 0, "|     ");
+		for (x = 0; x < maxLength; x++)
+			addch (' ');
+		addstr (" |");
+
+		/* print every option */
+		for (i = 0; i < optc; i++) {
+			mvprintw (i + 2, 0, "| %2d) %s", i + 1, optionNames[i]);
+			for (x = 0; x < maxLength - optionLengths[i]; x++)
+				addch (' ');
+			addstr (" |");
+		}
+
+		/* another blank space */
+		mvaddstr (i + 2, 0, "|     ");
+		for (x = 0; x < maxLength; x++)
+			addch (' ');
+		addstr (" |");
+
+		/* end with bottom of border */
+		mvaddstr (i + 3, 0, "+=====");
+		for (x = 0; x < maxLength; x++)
+			addch ('=');
+		addstr ("=+");
 
 		/* draw option pointer */
 		mvaddch (option + 2, 5, '>' | A_BLINK);
 
 		refresh ();
 
-		buf = (wgetch (stdscr));
-		switch (buf) {
-		case 'q':
-		case 27: /* key code for Esc */
-			option = MENU_NO_INPUT;
+		/* now get input */
+		buf = toupper (getch ());
+
+		if (buf == 'Q' || buf == 27) {
+			/* quit or Esc */
+			option = -1;
 			gotInput = true;
-			break;
-		case '1':
-			option = MENU_NO_INPUT;
-			gotInput = true;
-			break;
-		case '2':
-			option = MENU_RESTART;
-			gotInput = true;
-			break;
-		case '3':
-			option = MENU_SAVE_GAME;
-			gotInput = true;
-			break;
-		case '4':
-			option = MENU_EXIT_GAME;
-			gotInput = true;
-			break;
-		case '5':
-			option = MENU_TUTORIAL;
-			gotInput = true;
-			break;
-		case 10: /* key code for Return */
-			gotInput = true;
-			break;
-		case 'w':
-		case KEY_UP:
+		} else if ('1' <= buf && buf <= '9') {
+			/* numbers corresponding to options */
+			if (buf - '0' <= optc) {
+				/* the user selected an option that DOES exist */
+				option = buf - '0' - 1;
+				gotInput = true;
+			}
+			/* otherwise, do nothing */
+		} else if (buf == 'W' || buf == KEY_UP) {
 			option--;
 			if (option < 0) option = 0;
-			break;
-		case 'a':
-		case KEY_LEFT:
+		} else if (buf == 'A' || buf == KEY_LEFT) {
 			option--;
 			if (option < 0) option = 0;
-			break;
-		case 's':
-		case KEY_DOWN:
+		} else if (buf == 'S' || buf == KEY_DOWN) {
 			option++;
-			if (option > 4) option = 4;
-			break;
-		case 'd':
-		case KEY_RIGHT:
+			if (option > optc - 1) option = optc - 1;
+		} else if (buf == 'D' || buf == KEY_RIGHT) {
 			option++;
-			if (option > 4) option = 4;
-			break;
+			if (option > optc - 1) option = optc - 1;
+		} else if (buf == 10) {
+			/* return or enter */
+			gotInput = true;
 		}
 	}
-	/* set cursor to visible */
-	curs_set (1);
+	
+	curs_set (1); /* cursor visible */
+	free (optionNames);
+	free (optionLengths);
 	return option;
 }
 

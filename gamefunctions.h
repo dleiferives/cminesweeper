@@ -35,8 +35,8 @@ bool allClear (Board mines, Board board);
    initialize the game. */
 int game (int xDim, int yDim, int qtyMines, Savegame * saveptr);
 
-/* returns 0 if no input, 1 to restart game, 2 to exit game, 3 to play tutorial */
-int menu ();
+/* returns the 0-indexed option chosen by the user */
+int menu (int optc, const char * title, ...);
 
 /* play the game tutorial */
 int tutorial ();
@@ -44,7 +44,7 @@ int tutorial ();
 /* print user controls with the top left corner at (y, x) */
 int printCtrlsyx (int y, int x);
 
-/* printCtrls with default location at (3, 29) */
+/* printCtrls using default location at (3, 29) */
 int printCtrls ();
 
 /* print a blank game board of dimensions defined in board */
