@@ -36,7 +36,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	bool firstClick;		/* the user has made the first click */
 	bool isAlive = true;
 	bool exitGame = false;
-	bool gotInput = false;
+
 	bool setBreak = false;
 	/* number of flags placed */
 	int flagsPlaced;
@@ -155,9 +155,8 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			return GAME_EXIT;
 		}
 
-		action = ACTION_NONE;
 		setBreak = false;
-		gotInput = false;
+
 		op = 0;
 
 		move (cy, cx);
@@ -174,7 +173,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		case 'q':
 		case 27: /* key code for Esc */
 			action = ACTION_ESCAPE;
-			gotInput = true;
+
 			break;
 		case KEY_MOUSE:
 			getmouse (&m_event);
@@ -188,23 +187,23 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 				action = ACTION_BOARD_OP;
 				op = 2;
 			}
-			gotInput = true;
+
 			break;
 		case 'm':
 			action = ACTION_CHG_MODE;
-			gotInput = true;
+
 			break;
 		case 'z':
 		case '/':
 			op = 1;
 			action = ACTION_BOARD_OP;
-			gotInput = true;
+
 			break;
 		case 'x':
 		case '\'':
 			op = 2;
 			action = ACTION_BOARD_OP;
-			gotInput = true;
+
 			break;
 		case 'r':
 			return GAME_RESTART;
@@ -212,11 +211,11 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			getyx (stdscr, cy, cx);
 			op = 1;
 			action = ACTION_BOARD_OP;
-			gotInput = true;
+
 			break;
 		case 32: /* key code for space */
 			action = ACTION_CHG_MODE;
-			gotInput = true;
+
 			break;
 		case KEY_UP:
 		case 'w':
@@ -234,9 +233,11 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		case 'd':
 			cx += 2;
 			break;
+		default:
+			action = ACTION_NONE;
 		}
 
-		/* round the cursor position to nearest grid coordinate */
+		/* round the cursor position down to nearest grid coordinate */
 		if (cx % 2 == 0)
 			cx--;
 		
@@ -280,17 +281,54 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		/* This switch is responsible for handling the user input gathered in the beginning. */
 		switch (action) {
 		case ACTION_BOARD_OP:
-			if (0 <= x && x <= xDim + 1 && 0 <= y && y <= yDim + 1) {
-				/* if a selection is made inside game board */
-				if (mines.array[x][y] == 'X' && vMem.array[x][y] != 'P') {
-					/* if user selects a MINE square to uncover */
-					if ((!isFlagMode && op == 1) || (isFlagMode && op == 2)) {
-						clear ();
-						clearok (stdscr, 0);
+			if (mines.array[x][y] == 'X' && vMem.array[x][y] != 'P') {
+				/* if user selects a MINE square to uncover */
+				if ((!isFlagMode && op == 1) || (isFlagMode && op == 2)) {
+					clear ();
+					clearok (stdscr, 0);
+					overlayMines (mines, &vMem);
+					vMem.array[x][y] = '#';
+					printBoard (vMem);
+					printFrame (vMem);
+					printCtrlsyx (0, hudOffset);
+					mvaddstr (8, hudOffset, "You died! Game over.\n");
+					refresh ();
+					isAlive = false;
+					setBreak = true;
+					break;
+				}
+			}
+			/* else... */
+			if ('1' <= vMem.array[x][y] && vMem.array[x][y] <= '9') {
+				buf = 0;
+				/* count number of adjacent flags */
+				for (k = -1; k <= 1; k++) {
+					for (h = -1; h <= 1; h++) {
+						if (vMem.array[x + h][y + k] == 'P') buf++;
+					}
+				}
+				/* if number of adjacent flags == number displayed on square */
+				if (buf == vMem.array[x][y] - '0') {
+					buf = 0;
+					for (k = -1; k <= 1; k++) {
+						for (h = -1; h <= 1; h++) {
+							/* for each adjacent square */
+							if (vMem.array[x + h][y + k] == '+') {
+								if (mines.array[x + h][y + k] != 'X') {
+									/* if the square is not a mine */
+									openSquares (mines, &vMem, x + h, y + k);
+								} else {
+									/* if the square is a mine */
+									buf = 1;
+									vMem.array[x + h][y + k] = '#';
+								}
+							}
+						}
+					}
+					if (buf == 1) {
 						overlayMines (mines, &vMem);
-						vMem.array[x][y] = '#';
+						move (1, 0);
 						printBoard (vMem);
-						printFrame (vMem);
 						printCtrlsyx (0, hudOffset);
 						mvaddstr (8, hudOffset, "You died! Game over.\n");
 						refresh ();
@@ -299,80 +337,42 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 						break;
 					}
 				}
+			}
 
-				if ('1' <= vMem.array[x][y] && vMem.array[x][y] <= '9') {
-					buf = 0;
-					for (k = -1; k <= 1; k++) {
-						for (h = -1; h <= 1; h++) {
-							if (vMem.array[x + h][y + k] == 'P') buf++;
+			else {
+				if (!isFlagMode) {
+					/* game set to normal mode */
+					switch (op) {
+					case 1:
+						openSquares (mines, &vMem, x, y);
+						firstClick = true;
+						break;
+					case 2:
+						if (vMem.array[x][y] == '+') {
+							vMem.array[x][y] = 'P';
+							flagsPlaced++;
+						} else if (vMem.array[x][y] == 'P') {
+							vMem.array[x][y] = '+';
+							flagsPlaced--;
 						}
+						break;
 					}
-					if (buf == vMem.array[x][y] - 48) {
-						buf = 0;
-						for (k = -1; k <= 1; k++) {
-							for (h = -1; h <= 1; h++) {
-								/* for each adjacent square */
-								if (vMem.array[x + h][y + k] == '+') {
-									if (mines.array[x + h][y + k] != 'X') {
-										/* if the square is not a mine */
-										openSquares (mines, &vMem, x + h, y + k);
-									} else {
-										/* if the square is a mine */
-										buf = 1;
-										vMem.array[x + h][y + k] = '#';
-									}
-								}
-							}
+				} else {
+					/* game is set to flag mode */
+					switch (op) {
+					case 1:
+						if (vMem.array[x][y] == '+') {
+							vMem.array[x][y] = 'P';
+							flagsPlaced++;
+						} else if (vMem.array[x][y] == 'P') {
+							vMem.array[x][y] = '+';
+							flagsPlaced--;
 						}
-						if (buf == 1) {
-							overlayMines (mines, &vMem);
-							move (1, 0);
-							printBoard (vMem);
-							printCtrlsyx (0, hudOffset);
-							mvaddstr (8, hudOffset, "You died! Game over.\n");
-							refresh ();
-							isAlive = false;
-							setBreak = true;
-							break;
-						}
-					}
-				}
-
-				else {
-					if (!isFlagMode) {
-						/* game set to normal mode */
-						switch (op) {
-						case 1:
-							openSquares (mines, &vMem, x, y);
-							firstClick = true;
-							break;
-						case 2:
-							if (vMem.array[x][y] == '+') {
-								vMem.array[x][y] = 'P';
-								flagsPlaced++;
-							} else if (vMem.array[x][y] == 'P') {
-								vMem.array[x][y] = '+';
-								flagsPlaced--;
-							}
-							break;
-						}
-					} else {
-						/* game is set to flag mode */
-						switch (op) {
-						case 1:
-							if (vMem.array[x][y] == '+') {
-								vMem.array[x][y] = 'P';
-								flagsPlaced++;
-							} else if (vMem.array[x][y] == 'P') {
-								vMem.array[x][y] = '+';
-								flagsPlaced--;
-							}
-							break;
-						case 2:
-							openSquares (mines, &vMem, x, y);
-							firstClick = true;
-							break;
-						}
+						break;
+					case 2:
+						openSquares (mines, &vMem, x, y);
+						firstClick = true;
+						break;
 					}
 				}
 			}
@@ -423,7 +423,6 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 				mvprintw (11, hudOffset, ">");
 				buf = 0;
 				
-				
 				while (!(buf == 'Y' || buf == 'N'))
 					buf = toupper (getch ());
 				clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
@@ -442,7 +441,6 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 				mvprintw (11, hudOffset, ">");
 				buf = 0;
 
-				
 				while (!(buf == 'Y' || buf == 'N' || buf == 'C'))
 					buf = toupper (getch ());
 				clock_gettime (CLOCK_MONOTONIC, &timeBuffer);

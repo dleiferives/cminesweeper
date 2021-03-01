@@ -20,7 +20,6 @@ int main (int argc, char* argv[]) {
 	/* vars for menu navigation */
 	int input = 0;
 	int option;
-	bool gotInput = false;
 	/* dimensions of the game board */
 	int xDim = 9, yDim = 9;
 	int qtyMines = 10;
@@ -82,11 +81,13 @@ int main (int argc, char* argv[]) {
 	if (!gotArgs) {
 		/* if save file does not exist, then automatically start new game */
 		if (!saveFileExists) 
-			gotInput = true;
-		/* always default to first option (new game) */
-		option = menu (2, "Welcome to Minesweeper!", "New game", "Load game");
-		if (option == -1)
-			exitCode = -1;
+			option = 0;
+		else {
+			/* otherwise, prompt user */
+			option = menu (2, "Welcome to Minesweeper!", "New game", "Load game");
+			if (option == -1)
+				exitCode = -1;
+		}
 
 		if (option == 0) {
 			/* user chooses to start new game */
