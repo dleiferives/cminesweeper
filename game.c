@@ -11,10 +11,11 @@
 #include "board.h"
 #include "savegame.h"
 
-#include <unistd.h>	/* sleep */
-/* use a define statement because sleep isn't portable to windows */
-#define uSleep(val) usleep(val)
+#include <unistd.h>	/* usleep */
+/* use a define statement because usleep isn't portable to windows */
+#define Sleep(ms) usleep((useconds_t)(ms * 1000))
 
+/* timespec utility functions */
 void subtractTimespec (struct timespec * dest, struct timespec * src);	/* adds src to dest */
 void addTimespec (struct timespec * dest, struct timespec * src);		/* subtracts src from dest */
 double timespecToDouble (struct timespec spec);							/* converts a timespec interval to a float value */
@@ -41,12 +42,12 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	int flagsPlaced;		/* number of flags placed */
 
 	Savegame save;	/* savegame object */
-	Board board;		/* struct storing the state of the game board */
+	Board board;	/* struct storing the state of the game board */
 	MEVENT m_event;	/* mouse event */
 
 	/* structs for timekeeping */
 	struct timespec timeOffset;	/* running counter to adjust time calculation */
-	struct timespec timeMenu;	/* time spent in the menu in the current session */
+	struct timespec timeMenu;	/* time spent in the menu */
 	struct timespec timeBuffer;	/* buffer used in time calculations */
 
 	/* stores whether the user used the primary or secondary button */
@@ -151,7 +152,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 
 		/* get input */
 		buf = getch ();
-		uSleep (16666); /* sleep 1/60th of a second */
+		Sleep (16); /* sleep 1/60th of a second */
 		
 		switch (buf) {
 		case 'q':

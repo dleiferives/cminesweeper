@@ -83,7 +83,7 @@ int loadSaveFile (const char * filename, Savegame * saveptr) {
 		   member in the Savegame struct is actually a pointer. */
 		fread (saveptr, sizeof (Savegame) - sizeof (uint8_t *), 1, savefile);
 		/* allocate the necessary memory */
-		saveptr->gameData = (uint8_t *) malloc (saveptr->size);
+		saveptr->gameData = (char *) malloc (saveptr->size);
 		/* then read the data pointed to by gameData */
 		fread (saveptr->gameData, saveptr->size, 1, savefile);
 		fclose (savefile);

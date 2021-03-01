@@ -81,9 +81,9 @@ int main (int argc, char* argv[]) {
 	/* determine whether to load game or start new game */
 	if (!gotArgs) {
 		/* if save file does not exist, then automatically start new game */
-		if (!saveFileExists) 
+		if (!saveFileExists) {
 			option = 0;
-		else {
+		} else {
 			/* otherwise, prompt user */
 			option = menu (2, "Welcome to Minesweeper!", "New game", "Load game");
 			if (option == -1)
@@ -151,10 +151,11 @@ int main (int argc, char* argv[]) {
 			/* if player exited manually */
 			echo ();
 			break;
-		} else if (exitCode == GAME_RESTART) {
-			/* don't allow the user to restart a loaded game */
-			saveptr = NULL;
 		}
+		/* game restart condition requires no special action */
+		
+		/* user can only load game on the first run */
+		saveptr = NULL;
 	}
 	echo ();
 	endwin ();
