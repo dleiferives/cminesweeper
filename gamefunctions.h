@@ -31,12 +31,18 @@ int openSquares (Board * board, int x, int y);
 bool allClear (Board board);
 
 /* returns 0 on game loss, 1 on success, 2 on manual exit, 3 on restart.
-   If save is not NULL, then xDim, yDim and qtyMines will be used to 
+   If saveptr is not NULL, then xDim, yDim and qtyMines will be used to 
    initialize the game. */
 int game (int xDim, int yDim, int qtyMines, Savegame * saveptr);
 
 /* returns the 0-indexed option chosen by the user */
 int menu (int optc, const char * title, ...);
+
+/* moves the cursor and returns the 0-indexed option chosen by the user */
+int mvmenu (int y, int x, int optc, const char * title, ...);
+
+/* internal va_list menu function */
+int vmenu (int y, int x, int optc, const char * title, va_list options);
 
 /* play the game tutorial */
 int tutorial ();
@@ -71,7 +77,6 @@ int printFrame (Board board);
 #define ACTION_BOARD_OP	1
 #define ACTION_CHG_MODE	2
 #define ACTION_ESCAPE	3
-#define ACTION_INC_TIME	4
 
 /* masks for accessing mine data */
 #define MASK_MINE 0x80  

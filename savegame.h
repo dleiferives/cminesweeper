@@ -8,6 +8,7 @@
 #include <time.h>	/* timespec */
 #include "board.h"
 
+/* masks for extracting bools from gameBools */
 #define MASK_FLAG_MODE		0x01
 #define MASK_FIRST_CLICK	0x02
 
@@ -19,11 +20,11 @@ typedef struct {
 	int32_t flagsPlaced;	/* flags placed by user */
 	uint32_t gameBools;		/* integer storing the state of in-game bools */
 	int32_t cy, cx;			/* cursor coordinates */
-	struct timespec timeOffset;		/* game duration in seconds */
-	char * gameData;		/* string of bytes storing board and mine data */
+	struct timespec timeOffset;		/* game duration */
+	char * gameData;		/* string of bytes storing board data */
 } Savegame;
 
-/* utility function declarations */
+/* prototypes for utility functions */
 
 /* decodes game data from the savegame into the mine and board structs */
 int getGameData (Board * board, Savegame save);

@@ -154,7 +154,7 @@ int overlayMines (Board * board) {
 				if ((board->array[x][y] & MASK_CHAR) == 'P') {
 					board->array[x][y] &= ~MASK_CHAR;	/* clear char */
 					board->array[x][y] |= 'F';			/* assign char */
-				} else {
+				} else if ((board->array[x][y] & MASK_CHAR) != '#') {
 					board->array[x][y] &= ~MASK_CHAR;	/* clear char */
 					board->array[x][y] |= 'X';			/* assign char */
 				}
@@ -244,7 +244,25 @@ bool allClear (Board board) {
 }
 
 int menu (int optc, const char * title, ...) {
-	int i, x; /* counting variables */
+	int choice;
+	va_list options;
+	va_start (options, title);
+	choice = vmenu (0, 0, optc, title, options);
+	va_end (options);
+	return choice;
+}
+
+int mvmenu (int y, int x, int optc, const char * title, ...) {
+	int choice;
+	va_list options;
+	va_start (options, title);
+	choice = vmenu (y, x, optc, title, options);
+	va_end (options);
+	return choice;
+}
+
+int vmenu (int y, int x, int optc, const char * title, va_list options) {
+	int i, k; /* counting variables */
 	size_t maxLength;
 	/* string array to hold option names */
 	const char ** optionNames = malloc (optc * sizeof (char *));
@@ -256,9 +274,6 @@ int menu (int optc, const char * title, ...) {
 	bool gotInput = false; /* the user has made a choice */
 	int buf = 0;
 	int option = 0;
-
-	va_list options;
-	va_start (options, title);
 	
 	/* populate the string array using the varargs */
 	for (i = 0; i < optc; i++)
@@ -282,39 +297,39 @@ int menu (int optc, const char * title, ...) {
 	while (!gotInput) {
 		/* print the menu */
 		/* start with top of border */
-		mvprintw (0, 0, "+= %s ", title);
-		for (x = 0; x < maxLength - titleLength; x++)
+		mvprintw (y, x, "+= %s ", title);
+		for (k = 0; k < maxLength - titleLength; k++)
 			addch ('=');
 		addstr ("==+");
 
 		/* blank space */
-		mvaddstr (1, 0, "|     ");
-		for (x = 0; x < maxLength; x++)
+		mvaddstr (y + 1, x, "|     ");
+		for (k = 0; k < maxLength; k++)
 			addch (' ');
 		addstr ("  |");
 
 		/* print every option */
 		for (i = 0; i < optc; i++) {
-			mvprintw (i + 2, 0, "| %2d) %s", i + 1, optionNames[i]);
-			for (x = 0; x < maxLength - optionLengths[i]; x++)
+			mvprintw (y + i + 2, x, "| %2d) %s", i + 1, optionNames[i]);
+			for (k = 0; k < maxLength - optionLengths[i]; k++)
 				addch (' ');
 			addstr ("  |");
 		}
 
 		/* another blank space */
-		mvaddstr (i + 2, 0, "|     ");
-		for (x = 0; x < maxLength; x++)
+		mvaddstr (y + i + 2, x, "|     ");
+		for (k = 0; k < maxLength; k++)
 			addch (' ');
 		addstr ("  |");
 
 		/* end with bottom of border */
-		mvaddstr (i + 3, 0, "+=====");
-		for (x = 0; x < maxLength; x++)
+		mvaddstr (y + i + 3, x, "+=====");
+		for (k = 0; k < maxLength; k++)
 			addch ('=');
 		addstr ("==+");
 
 		/* draw option pointer */
-		mvaddch (option + 2, 5, '>' | A_BLINK);
+		mvaddch (y + option + 2, x + 5, '>' | A_BLINK);
 
 		refresh ();
 

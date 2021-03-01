@@ -5,7 +5,7 @@
 #include <curses.h>
 #include <math.h>	/* floorf */
 #include <ctype.h>	/* toupper */
-#include <time.h>	/* timespec, clock_gettime */
+#include <time.h>	/* timespec, usleep */
 
 #include "gamefunctions.h"
 #include "board.h"
@@ -35,8 +35,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	bool isFlagMode;		/* flag mode is enabled */
 	bool firstClick;		/* player has made the first click */
 	bool isAlive = true;	/* player is alive */
-	bool exitGame = false;	/* flag is set to exit */
-	bool setBreak = false;	/* flag is set to exit loop */
+	bool exitGame = false;	/* the game is set to exit */
 	int flagsPlaced;		/* number of flags placed */
 
 	Savegame save;	/* savegame object */
@@ -104,55 +103,41 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	clear ();
 	
 	while (isAlive) {
-		printFrame (board);
+		if (!firstClick)
+			clock_gettime (CLOCK_MONOTONIC, &timeOffset);
 		
+		/* calculate duration of the game */
+		clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
+		subtractTimespec (&timeBuffer, &timeOffset);
+		
+		printFrame (board);
+		printCtrlsyx (0, hudOffset);
 		if (allClear (board)) {
 			/* only if player has won */
 			overlayMines (&board);
 			printBoardCustom (board, false, (chtype)'F' | COLOR_PAIR (4), (chtype)'P' | COLOR_PAIR(3));
-			printCtrlsyx (0, hudOffset);
-			mvaddstr (8, hudOffset, "You won!\n");
-			clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
-			subtractTimespec (&timeBuffer, &timeOffset);
-			mvprintw (9, hudOffset, "Time: %.3f\n", timespecToDouble (timeBuffer));
+			mvprintw (7, hudOffset, "[ %02d/%02d ][ %3.3f ]" , flagsPlaced, qtyMines, timespecToDouble (timeBuffer));
+			mvprintw (8, hudOffset, "[ You won!        ]", timespecToDouble (timeBuffer));
 			refresh ();
 			break;
-		}
-		else {
+		} else {
+			/* player hasn't won yet */
+			mvprintw (7, hudOffset, "[ %02d/%02d ][ %03d ]", flagsPlaced, qtyMines, (int) floorf (timespecToDouble (timeBuffer)));
 			printBoard (board);
-			printCtrlsyx (0, hudOffset);
-			printFrame (board);
+			mvaddstr (8, hudOffset,
+				isFlagMode
+				? "[ Flag mode    ]"
+				: "[ Normal mode  ]"
+			);
+			move (cy, cx);
 		}
-
-		mvprintw (8, hudOffset, "Flags placed: %02d/%02d", flagsPlaced, qtyMines);
-		mvprintw (9, hudOffset, "Mode: ");
-		if (isFlagMode)
-			printw ("Flag   | ");
-		else
-			printw ("Normal | ");
-		if (!firstClick)
-			clock_gettime (CLOCK_MONOTONIC, &timeOffset);
-		
-		clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
-		subtractTimespec (&timeBuffer, &timeOffset);
-		printw ("Time: %03d", (int) floorf (timespecToDouble (timeBuffer)));
-		
-		if (exitGame) {
-			freeBoardArray (&board);
-			return GAME_EXIT;
-		}
-
-		setBreak = false;
-
-		op = 0;
-
-		move (cy, cx);
 
 		/* set cursor to very visible */
 		curs_set (2);
 		nodelay (stdscr, true);
 
 		/* get input */
+		op = 0;
 		buf = getch ();
 		Sleep (16); /* sleep 1/60th of a second */
 		
@@ -173,23 +158,19 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 				action = ACTION_BOARD_OP;
 				op = 2;
 			}
-
 			break;
 		case 'm':
 			action = ACTION_CHG_MODE;
-
 			break;
 		case 'z':
 		case '/':
 			op = 1;
 			action = ACTION_BOARD_OP;
-
 			break;
 		case 'x':
 		case '\'':
 			op = 2;
 			action = ACTION_BOARD_OP;
-
 			break;
 		case 'r':
 			return GAME_RESTART;
@@ -197,11 +178,9 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			getyx (stdscr, cy, cx);
 			op = 1;
 			action = ACTION_BOARD_OP;
-
 			break;
 		case 32: /* key code for space */
 			action = ACTION_CHG_MODE;
-
 			break;
 		case KEY_UP:
 		case 'w':
@@ -255,13 +234,13 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			while (numMines (board, x, y) > 0 || (board.array[x][y] & MASK_MINE)) {
 				initializeMines (&board);
 				buf++;
-				if (buf > 100) break;
-			}
-			if (buf > 100) {
-				board.mineCount--;
-				initializeMines (&board);
-				/* unset MSB */
-				board.array[x][y] &= ~MASK_MINE;
+				if (buf > 100) {
+					board.mineCount--;
+					initializeMines (&board);
+					/* unset MSB */
+					board.array[x][y] &= ~MASK_MINE;
+					break;
+				}
 			}
 		}
 		
@@ -282,7 +261,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 					mvaddstr (8, hudOffset, "You died! Game over.\n");
 					refresh ();
 					isAlive = false;
-					setBreak = true;
+					exitGame = true;
 					break;
 				}
 			}
@@ -308,7 +287,8 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 								} else {
 									/* if the square is a mine */
 									buf = 1;
-									board.array[x + h][y + k] = '#';
+									board.array[x + h][y + k] &= ~MASK_CHAR;
+									board.array[x + h][y + k] |= '#';
 								}
 							}
 						}
@@ -321,7 +301,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 						mvaddstr (8, hudOffset, "You died! Game over.\n");
 						refresh ();
 						isAlive = false;
-						setBreak = true;
+						exitGame = true;
 						break;
 					}
 				}
@@ -406,43 +386,30 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 				break;
 			case MENU_RESTART:
 				/* ask user if they really want to restart */
-				mvprintw (10, hudOffset, "Really restart? (Y/N)");
-				mvprintw (11, hudOffset, ">");
-				buf = 0;
-				
-				while (!(buf == 'Y' || buf == 'N'))
-					buf = toupper (getch ());
-				clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
-				subtractTimespec (&timeBuffer, &timeMenu);
-				addTimespec (&timeOffset, &timeBuffer);
-				
+				buf = mvmenu (7, hudOffset, 2, "Really restart?", "Yes", "No");
 				clear ();
-				if (buf == 'N') break;
+				if (buf == 1) break;
 
 				freeBoardArray (&board);
 				return GAME_RESTART;
 			case MENU_EXIT_GAME:
 				/* prompt user to save before exiting */
-				mvprintw (10, hudOffset, "Save before exiting? (Y/N/C)");
-				mvprintw (11, hudOffset, ">");
-				buf = 0;
-
-				while (!(buf == 'Y' || buf == 'N' || buf == 'C'))
-					buf = toupper (getch ());
+				buf = mvmenu (7, hudOffset, 3, "Save before exiting?", "Yes", "No", "Cancel");
+				
 				clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
 				subtractTimespec (&timeBuffer, &timeMenu);
 				addTimespec (&timeOffset, &timeBuffer);
 				
-				if (buf == 'N') {
+				if (buf == 1) {
 					/* Exit without saving */
 					exitGame = true;
 					break;
-				} else if (buf == 'C') {
+				} else if (buf == 2 || buf == -1) {
 					/* C = cancel, so don't actually exit */
 					clear ();
 					break;
 				} else {
-					/* buf == 'Y' is implied, so fall through to the save game case */
+					/* buf == 0 is implied, so fall through to the save game case */
 					exitGame = true;
 					/* no break statement */
 				}
@@ -475,13 +442,14 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			}
 			break;
 		}
-		if (setBreak) break;
+		if (exitGame) break;
 		refresh ();
 	}
 	/* once player either has won or lost */
 	move (19, 0);
 
 	freeBoardArray (&board);
+	/* if player exited through menu */
 	if (action == ACTION_ESCAPE) return GAME_EXIT;
 	/* GAME_FAILURE and GAME_SUCCESS are set to 0 and 1 respectively, hence why
 	   returning the state of isAlive works. */

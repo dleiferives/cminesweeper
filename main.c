@@ -141,12 +141,9 @@ int main (int argc, char* argv[]) {
 		exitCode = game (xDim, yDim, qtyMines, saveptr);
 		if (exitCode == GAME_FAILURE || exitCode == GAME_SUCCESS) {
 			/* if player won or lost */
-			mvprintw (10, hudOffset, "Play again? (Y/N)");
-			mvprintw (11, hudOffset, ">");
-			option = 0;
-			while (!(option == 'Y' || option == 'N'))
-				option = toupper (getch ());
-			if (option == 'N')
+			option = mvmenu (9, hudOffset, 2, "Play again?", "Yes", "No");
+			
+			if (option == 1)
 				break;
 		} else if (exitCode == GAME_EXIT) {
 			/* if player exited manually */
