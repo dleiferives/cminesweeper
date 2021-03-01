@@ -29,9 +29,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	int x = 0, y = 0;	/* absolute array coordinates */
 	int h, k;			/* relative array coordinates */
 	int cx, cy;			/* cursor coordinates */
-	/* x-offset of where to print the HUD */
-	int hudOffset = 2 * xDim + 10;
-	if (hudOffset < 18) hudOffset = 18;
+	int hudOffset;		/* x-offset of where to print the HUD */
 	
 	/* variables storing info about the game state */
 	bool isFlagMode;		/* flag mode is enabled */
@@ -95,6 +93,10 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		initBoardArray (&board);
 		initializeMines (&board);
 	}
+
+	/* set the hudOffset */
+	hudOffset = 2 * board.width + 10;
+	if (hudOffset < 18) hudOffset = 18;
 
 	/*** BEGIN GAMEPLAY ***/
 

@@ -28,7 +28,6 @@ int main (int argc, char* argv[]) {
 
 	/* loadSaveFile returns -1 if error opening file */
 	bool saveFileExists = (loadSaveFile ("savefile", saveptr) != -1);
-
 	srand (time (NULL));
 	initscr ();
 	keypad (stdscr, true);
@@ -54,7 +53,7 @@ int main (int argc, char* argv[]) {
 	/* get terminal dimensions */
 	getmaxyx(stdscr, termHeight, termWidth);
 
-	/* set upper and lower limits for acceptable dimensions based on terminal dimensions */
+	/* set upper and lower limits for acceptable dimensions */
 	/* minimum dimension is always 1 */
 	if (xDim < 1)
 		xDim = 1;
@@ -122,6 +121,8 @@ int main (int argc, char* argv[]) {
 		} else {
 			/* user chooses to load game */
 			loadSaveFile ("savefile", saveptr);
+			/* update xDim to calculate hudOffset later */
+			xDim = saveptr->width;
 		}
 	} else {
 		/* command line arguments were supplied, so don't use a save file */
