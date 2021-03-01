@@ -32,7 +32,8 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	/* mouse event */
 	MEVENT m_event;
 	/* bools storing info about the game state */
-	bool isFlagMode, firstClick;
+	bool isFlagMode;		/* flag mode is enabled */
+	bool firstClick;		/* the user has made the first click */
 	bool isAlive = true;
 	bool exitGame = false;
 	bool gotInput = false;
@@ -275,8 +276,6 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 				if (mines.array[x][y] == 'X') mines.array[x][y] = '+';
 			}
 		}
-
-		if (gotInput && action == ACTION_BOARD_OP) firstClick = true;
 		
 		/* This switch is responsible for handling the user input gathered in the beginning. */
 		switch (action) {
@@ -345,6 +344,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 						switch (op) {
 						case 1:
 							openSquares (mines, &vMem, x, y);
+							firstClick = true;
 							break;
 						case 2:
 							if (vMem.array[x][y] == '+') {
@@ -370,6 +370,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 							break;
 						case 2:
 							openSquares (mines, &vMem, x, y);
+							firstClick = true;
 							break;
 						}
 					}

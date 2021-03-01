@@ -121,6 +121,9 @@ int main (int argc, char* argv[]) {
 			/* user chooses to load game */
 			loadSaveFile ("savefile", saveptr);
 		}
+	} else {
+		/* command line arguments were supplied, so don't use a save file */
+		saveptr = NULL;
 	}
 
 	/* set the offset now that the dimensions have been set */
