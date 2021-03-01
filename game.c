@@ -147,7 +147,8 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		
 		clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
 		subtractTimespec (&timeBuffer, &timeOffset);
-		printw ("Time: %03d    ", (int) floorf (timespecToDouble (timeBuffer)));
+		//printw ("Time: %03d", (int) floorf (timespecToDouble (timeBuffer)));
+		printw ("Time: %03.3lf", timespecToDouble (timeBuffer));
 		
 		if (exitGame) {
 			freeBoardArray (&mines);
@@ -173,7 +174,6 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		case 'q':
 		case 27: /* key code for Esc */
 			action = ACTION_ESCAPE;
-
 			break;
 		case KEY_MOUSE:
 			getmouse (&m_event);
@@ -415,7 +415,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			switch (buf) {
 			case -1:
 			case MENU_NO_INPUT:
-				action = ACTION_ESCAPE;
+				//action = ACTION_ESCAPE;
 				break;
 			case MENU_RESTART:
 				/* ask user if they really want to restart */
@@ -511,7 +511,7 @@ void subtractTimespec (struct timespec * dest, struct timespec * src) {
 	if (dest->tv_nsec - src->tv_nsec < 0) {
 		/* borrow */
 		dest->tv_sec--;
-		dest->tv_nsec = src->tv_nsec - dest->tv_nsec;
+		dest->tv_nsec = 1000000000 + dest->tv_nsec - src->tv_nsec;
 	}
 	else {
 		dest->tv_nsec -= src->tv_nsec;
