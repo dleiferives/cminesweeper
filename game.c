@@ -15,7 +15,6 @@
 /* use a define statement because sleep isn't portable to windows */
 #define uSleep(val) usleep(val)
 
-/* utility functions for timespec */
 void subtractTimespec (struct timespec * dest, struct timespec * src);	/* adds src to dest */
 void addTimespec (struct timespec * dest, struct timespec * src);		/* subtracts src from dest */
 double timespecToDouble (struct timespec spec);							/* converts a timespec interval to a float value */
@@ -38,8 +37,6 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	bool exitGame = false;
 	bool gotInput = false;
 	bool setBreak = false;
-	/* game duration */
-	double gameDur;
 	/* number of flags placed */
 	int flagsPlaced;
 	/* savegame object */
@@ -55,9 +52,8 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	/* stores what action will be performed by the game */
 	uint8_t action = ACTION_NONE;
 	/* structs for timekeeping */
-	struct timespec timeLastLoop;	/* stores time at last iteration of loop */
 	struct timespec timeOffset;		/* running counter to adjust time calculation */
-	struct timespec timeMenu;		/* time spent in the menu */
+	struct timespec timeMenu;		/* time spent in the menu in the current session */
 	struct timespec timeBuffer;		/* buffer used in time calculations */
 
 	int buf = -1;
@@ -82,8 +78,9 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		flagsPlaced = save.flagsPlaced;
 		cy = save.cy;
 		cx = save.cx;
-		timeOffset.tv_sec = -save.timeOffset.tv_sec;
-		timeOffset.tv_nsec = -save.timeOffset.tv_nsec;
+		clock_gettime (CLOCK_MONOTONIC, &timeOffset);		/* set offset to current time */
+		subtractTimespec (&timeOffset, &save.timeOffset);	/* subtract the game duration */
+		
 		/* then initialize the boards */
 		mines.width = vMem.width = xDim;
 		mines.height = vMem.height = yDim;
@@ -116,12 +113,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 
 	noecho ();
 	clear ();
-	//secsLastLoop = clock ();
-	clock_gettime (CLOCK_MONOTONIC, &timeLastLoop);
-	clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
-	subtractTimespec (&timeBuffer, &timeOffset);
-	gameDur = timespecToDouble (timeBuffer);
-
+	
 	while (isAlive) {
 		printFrame (vMem);
 		
@@ -131,7 +123,9 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			printBoardCustom (vMem, false, (chtype)'F' | COLOR_PAIR (4), (chtype)'P' | COLOR_PAIR(3));
 			printCtrlsyx (0, hudOffset);
 			mvaddstr (8, hudOffset, "You won!\n");
-			mvprintw (9, hudOffset, "Time: %.3f\n", gameDur);
+			clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
+			subtractTimespec (&timeBuffer, &timeOffset);
+			mvprintw (9, hudOffset, "Time: %.3f\n", timespecToDouble (timeBuffer));
 			refresh ();
 			break;
 		}
@@ -148,8 +142,11 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		else
 			printw ("Normal | ");
 		if (!firstClick)
-			gameDur = 0;
-		printw ("Time: %03d", (int) floorf (gameDur));
+			clock_gettime (CLOCK_MONOTONIC, &timeOffset);
+		
+		clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
+		subtractTimespec (&timeBuffer, &timeOffset);
+		printw ("Time: %03d    ", (int) floorf (timespecToDouble (timeBuffer)));
 		
 		if (exitGame) {
 			freeBoardArray (&mines);
@@ -163,126 +160,98 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		op = 0;
 
 		move (cy, cx);
-		noecho ();
-		if (!firstClick) {
-			//timeOffset = clock ();
-			clock_gettime (CLOCK_MONOTONIC, &timeOffset);
-			clock_gettime (CLOCK_MONOTONIC, &timeLastLoop);
-			//secsLastLoop = clock ();
-		}
 
 		/* set cursor to very visible */
 		curs_set (2);
 		nodelay (stdscr, true);
 
-		/* This loop is responsible for taking user input.
-		   The loop will be interrupted every time that one second passes to refresh the screen. */
-		while (!gotInput) {
-			/* arrow key input */
-			buf = -1;
-			/* THIS IS WHERE A LOT OF PROCESSOR TIME IS USED: */
-			while (buf < 0) {
-				/* do until valid input is received (getch returns -1 if none is ready) */
-				buf = getch ();
-				uSleep (16666); /* sleep 1/60th of a second */
-				/* if one second has passed since the last clock refresh: */
-				clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
-				subtractTimespec (&timeBuffer, &timeLastLoop);
-				if (timespecToDouble (timeBuffer) > 1) {
-					action = ACTION_INC_TIME;
-					clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
-					subtractTimespec (&timeBuffer, &timeOffset);
-					gameDur = timespecToDouble (timeBuffer);
-					break;
-				}
-			}
-
-			if (action == ACTION_INC_TIME) break;
-
-			switch (buf) {
-			case 'q':
-			case 27: /* key code for Esc */
-				action = ACTION_ESCAPE;
-				gotInput = true;
-				break;
-			case KEY_MOUSE:
-				getmouse (&m_event);
-				cx = m_event.x;
-				cy = m_event.y;
-				if (m_event.bstate & BUTTON1_CLICKED) {
-					action = ACTION_BOARD_OP;
-					op = 1;
-				}
-				if (m_event.bstate & BUTTON3_CLICKED) {
-					action = ACTION_BOARD_OP;
-					op = 2;
-				}
-				gotInput = true;
-				break;
-			case 'm':
-				action = ACTION_CHG_MODE;
-				gotInput = true;
-				break;
-			case 'z':
-			case '/':
-				op = 1;
+		/* get input */
+		buf = getch ();
+		uSleep (16666); /* sleep 1/60th of a second */
+		
+		switch (buf) {
+		case 'q':
+		case 27: /* key code for Esc */
+			action = ACTION_ESCAPE;
+			gotInput = true;
+			break;
+		case KEY_MOUSE:
+			getmouse (&m_event);
+			cx = m_event.x;
+			cy = m_event.y;
+			if (m_event.bstate & BUTTON1_CLICKED) {
 				action = ACTION_BOARD_OP;
-				gotInput = true;
-				break;
-			case 'x':
-			case '\'':
+				op = 1;
+			}
+			if (m_event.bstate & BUTTON3_CLICKED) {
+				action = ACTION_BOARD_OP;
 				op = 2;
-				action = ACTION_BOARD_OP;
-				gotInput = true;
-				break;
-			case 'r':
-				return GAME_RESTART;
-			case 10: /* key code for Return */
-				getyx (stdscr, cy, cx);
-				op = 1;
-				action = ACTION_BOARD_OP;
-				gotInput = true;
-				break;
-			case 32: /* key code for space */
-				action = ACTION_CHG_MODE;
-				gotInput = true;
-				break;
-			case KEY_UP:
-			case 'w':
-				cy--;
-				break;
-			case KEY_DOWN:
-			case 's':
-				cy++;
-				break;
-			case KEY_LEFT:
-			case 'a':
-				cx -= 2;
-				break;
-			case KEY_RIGHT:
-			case 'd':
-				cx += 2;
-				break;
 			}
-
-			/* round the cursor position to nearest grid coordinate */
-			if (cx % 2 == 0)
-				cx--;
-			
-			/* if the cursor is out of bounds, place it back in the valid range */
-			if (cy < 3)
-				cy = 3;
-			if (cy > 2 + yDim)
-				cy = 2 + yDim;
-			if (cx < 5)
-				cx = 5;
-			if (cx > 3 + 2 * xDim)
-				cx = 3 + 2 * xDim;
-			
-			/* finally, move the cursor */
-			move (cy, cx);
-			refresh ();
+			gotInput = true;
+			break;
+		case 'm':
+			action = ACTION_CHG_MODE;
+			gotInput = true;
+			break;
+		case 'z':
+		case '/':
+			op = 1;
+			action = ACTION_BOARD_OP;
+			gotInput = true;
+			break;
+		case 'x':
+		case '\'':
+			op = 2;
+			action = ACTION_BOARD_OP;
+			gotInput = true;
+			break;
+		case 'r':
+			return GAME_RESTART;
+		case 10: /* key code for Return */
+			getyx (stdscr, cy, cx);
+			op = 1;
+			action = ACTION_BOARD_OP;
+			gotInput = true;
+			break;
+		case 32: /* key code for space */
+			action = ACTION_CHG_MODE;
+			gotInput = true;
+			break;
+		case KEY_UP:
+		case 'w':
+			cy--;
+			break;
+		case KEY_DOWN:
+		case 's':
+			cy++;
+			break;
+		case KEY_LEFT:
+		case 'a':
+			cx -= 2;
+			break;
+		case KEY_RIGHT:
+		case 'd':
+			cx += 2;
+			break;
 		}
+
+		/* round the cursor position to nearest grid coordinate */
+		if (cx % 2 == 0)
+			cx--;
+		
+		/* if the cursor is out of bounds, place it back in the valid range */
+		if (cy < 3)
+			cy = 3;
+		if (cy > 2 + yDim)
+			cy = 2 + yDim;
+		if (cx < 5)
+			cx = 5;
+		if (cx > 3 + 2 * xDim)
+			cx = 3 + 2 * xDim;
+		
+		/* finally, move the cursor */
+		move (cy, cx);
+		refresh ();
 
 		nodelay (stdscr, false);
 		/* set cursor to mildly visible */
@@ -414,7 +383,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		case ACTION_ESCAPE:
 			/* open the pause menu */
 			clock_gettime (CLOCK_MONOTONIC, &timeMenu);
-			//menuTime = clock ();
+			
 			printBlank (vMem);
 			
 			buf = menu (5, "Paused",
@@ -425,15 +394,22 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 				"View tutorial");
 
 			clear ();
-			// printBoard (vMem);
 			printFrame (vMem);
 			printBlank (vMem);
 			printCtrlsyx (0, hudOffset);
 
 			/* increment the time offset by the amount of time spent in menu */
 			clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
+			
 			subtractTimespec (&timeBuffer, &timeMenu);
 			addTimespec (&timeOffset, &timeBuffer);
+			
+			/* Use the input from menu to decide what to do. Since we will
+			   be prompting the user for input again and it might take time
+			   for them to decide, we will start the menu counter again,
+			   and then proceed to use the input. */
+			clock_gettime (CLOCK_MONOTONIC, &timeMenu);
+			
 
 			switch (buf) {
 			case -1:
@@ -445,9 +421,14 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 				mvprintw (10, hudOffset, "Really restart? (Y/N)");
 				mvprintw (11, hudOffset, ">");
 				buf = 0;
+				
+				
 				while (!(buf == 'Y' || buf == 'N'))
 					buf = toupper (getch ());
-
+				clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
+				subtractTimespec (&timeBuffer, &timeMenu);
+				addTimespec (&timeOffset, &timeBuffer);
+				
 				clear ();
 				if (buf == 'N') break;
 
@@ -459,8 +440,15 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 				mvprintw (10, hudOffset, "Save before exiting? (Y/N/C)");
 				mvprintw (11, hudOffset, ">");
 				buf = 0;
+
+				
 				while (!(buf == 'Y' || buf == 'N' || buf == 'C'))
 					buf = toupper (getch ());
+				clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
+				subtractTimespec (&timeBuffer, &timeMenu);
+				addTimespec (&timeOffset, &timeBuffer);
+				//addTimespec (&timeLastLoop, &timeBuffer);
+				
 				if (buf == 'N') {
 					/* Exit without saving */
 					exitGame = true;
@@ -492,6 +480,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 				subtractTimespec (&timeBuffer, &timeOffset);
 				save.timeOffset = timeBuffer;
 				setGameData (mines, vMem, &save);
+
 				buf = writeSaveFile ("savefile", save);
 				free (save.gameData);
 				break;
@@ -500,10 +489,9 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 				clear ();
 				break;
 			}
+			/* increment the time offset by the amount of time responding to the */
+			
 			break;
-		case ACTION_INC_TIME:
-			clock_gettime (CLOCK_MONOTONIC, &timeLastLoop);
-			//secsLastLoop = clock ();
 		}
 		if (setBreak) break;
 		refresh ();
@@ -546,7 +534,7 @@ void addTimespec (struct timespec * dest, struct timespec * src) {
 }
 
 double timespecToDouble (struct timespec spec) {
-	double result;
+	double result = 0.0;
 	result += spec.tv_sec;
 	result += spec.tv_nsec / 1.0e9;
 	return result;

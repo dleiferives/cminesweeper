@@ -274,33 +274,33 @@ int menu (int optc, const char * title, ...) {
 		mvprintw (0, 0, "+= %s ", title);
 		for (x = 0; x < maxLength - titleLength; x++)
 			addch ('=');
-		addstr ("=+");
+		addstr ("==+");
 
 		/* blank space */
 		mvaddstr (1, 0, "|     ");
 		for (x = 0; x < maxLength; x++)
 			addch (' ');
-		addstr (" |");
+		addstr ("  |");
 
 		/* print every option */
 		for (i = 0; i < optc; i++) {
 			mvprintw (i + 2, 0, "| %2d) %s", i + 1, optionNames[i]);
 			for (x = 0; x < maxLength - optionLengths[i]; x++)
 				addch (' ');
-			addstr (" |");
+			addstr ("  |");
 		}
 
 		/* another blank space */
 		mvaddstr (i + 2, 0, "|     ");
 		for (x = 0; x < maxLength; x++)
 			addch (' ');
-		addstr (" |");
+		addstr ("  |");
 
 		/* end with bottom of border */
 		mvaddstr (i + 3, 0, "+=====");
 		for (x = 0; x < maxLength; x++)
 			addch ('=');
-		addstr ("=+");
+		addstr ("==+");
 
 		/* draw option pointer */
 		mvaddch (option + 2, 5, '>' | A_BLINK);
