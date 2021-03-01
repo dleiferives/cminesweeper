@@ -65,7 +65,7 @@ int printFrame (Board board);
 #define GAME_EXIT		2
 #define GAME_RESTART	3
 
-/* macros for menu return codes */
+/* macros for pause menu return codes */
 #define MENU_NO_INPUT	0
 #define MENU_RESTART    1
 #define MENU_SAVE_GAME	2

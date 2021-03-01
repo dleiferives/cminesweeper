@@ -13,7 +13,7 @@
 
 #include <unistd.h>	/* usleep */
 /* use a define statement because usleep isn't portable to windows */
-#define Sleep(ms) usleep((useconds_t)(ms * 1000))
+#define Sleep(ms) usleep((ms * 1000))
 
 /* timespec utility functions */
 void subtractTimespec (struct timespec * dest, struct timespec * src);	/* adds src to dest */
@@ -52,6 +52,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	/* stores what action will be performed by the game */
 	uint8_t action;
 	
+	/* savegame handling */
 	if (saveptr != NULL) {
 		/* if a valid Savegame pointer was passed, initialize
 		   game based on the contents of that structure */
@@ -108,7 +109,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		
 		/* calculate duration of the game */
 		clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
-		subtractTimespec (&timeBuffer, &timeOffset);
+		subtractTimespec (&timeBuffer, &timeOffset);	/* duration is now stored in timeBuffer */
 		
 		printFrame (board);
 		printCtrlsyx (0, hudOffset);
@@ -117,7 +118,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			overlayMines (&board);
 			printBoardCustom (board, false, (chtype)'F' | COLOR_PAIR (4), (chtype)'P' | COLOR_PAIR(3));
 			mvprintw (7, hudOffset, "[ %02d/%02d ][ %3.3f ]" , flagsPlaced, qtyMines, timespecToDouble (timeBuffer));
-			mvprintw (8, hudOffset, "[ You won!        ]", timespecToDouble (timeBuffer));
+			mvprintw (8, hudOffset, "[ You won!        ]");
 			refresh ();
 			break;
 		} else {
@@ -134,16 +135,17 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 
 		/* set cursor to very visible */
 		curs_set (2);
-		nodelay (stdscr, true);
 
 		/* get input */
-		op = 0;
+		nodelay (stdscr, true);
 		buf = getch ();
+		nodelay (stdscr, false);
 		Sleep (16); /* sleep 1/60th of a second */
-		
+
+		op = 0;
 		switch (buf) {
 		case 'q':
-		case 27: /* key code for Esc */
+		case 27:	/* key code for Esc */
 			action = ACTION_ESCAPE;
 			break;
 		case KEY_MOUSE:
@@ -202,7 +204,9 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			action = ACTION_NONE;
 		}
 
-		/* round the cursor position down to nearest grid coordinate */
+		/* Round the cursor position down to nearest grid coordinate.
+		   This is done in case the player uses the mouse and clicks 
+		   on an off-character */
 		if (cx % 2 == 0)
 			cx--;
 		
@@ -220,33 +224,35 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		move (cy, cx);
 		refresh ();
 
-		nodelay (stdscr, false);
-		/* set cursor to mildly visible */
-		curs_set (1);
-
 		/* translate cursor coordinates to array coordinates */
 		x = (cx - 2) / 2;
 		y = cy - 2;
-
-		/* make sure that the player does not die on the first move */
-		buf = 0;
-		if (!firstClick) {
-			while (numMines (board, x, y) > 0 || (board.array[x][y] & MASK_MINE)) {
-				initializeMines (&board);
-				buf++;
-				if (buf > 100) {
-					board.mineCount--;
-					initializeMines (&board);
-					/* unset MSB */
-					board.array[x][y] &= ~MASK_MINE;
-					break;
-				}
-			}
-		}
 		
 		/* This switch is responsible for handling the user input gathered in the beginning. */
 		switch (action) {
 		case ACTION_BOARD_OP:
+			/* make sure that the player does not die on the first move */
+			if (!firstClick) {
+				buf = 0;
+				while (numMines (board, x, y) > 0 || (board.array[x][y] & MASK_MINE)) {
+					/* Re-randomize the mines until the current square has 0 neighbors.
+					   This also guarantees that the first square chosen is not a mine. */
+					initializeMines (&board);
+					buf++;
+					if (buf > 100) {
+						/* After 100 tries, simply give up and instead remove the mine at
+						   the current coordinate, to avoid locking up the game. This is
+						   done because in some circumstances, it is not possible for the
+						   first square to have 0 neighbors, such as if there are too many
+						   mines in too small a field */
+						board.mineCount--;
+						initializeMines (&board);
+						board.array[x][y] &= ~MASK_MINE;
+						break;
+					}
+				}
+			}
+
 			if ((board.array[x][y] & MASK_MINE) && ((board.array[x][y] & MASK_CHAR) != 'P')) {
 				/* if user selects a MINE square to uncover */
 				if ((!isFlagMode && op == 1) || (isFlagMode && op == 2)) {
