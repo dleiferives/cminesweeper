@@ -15,42 +15,30 @@
 #define HOME_ENV_NAME	"HOME"
 #define PATH_MAXSIZE 	NAME_MAX
 
-int getGameData (Board * mines, Board * board, Savegame save) {
+int getGameData (Board * board, Savegame save) {
 	int outputIndex = 0;
 	int x, y;
-	unsigned char buf;
 
 	/* iterate through elements on both boards */
 	for (y = 1; y <= board->height; y++) {
 		for (x = 1; x <= board->width; x++) {
-			/* XOR byte with a constant and write to buffer */
-			buf = save.gameData[outputIndex++] ^ 0x55;
-			/* if MSB is set, then set a mine in array */
-			mines->array[x][y] = (buf & 0x80)
-				? 'X'
-				: '+';
-			/* discard the MSB and assign to board array */
-			board->array[x][y] = buf & 0x7F;
+			/* XOR byte with a constant and write to board */
+			board->array[x][y] = save.gameData[outputIndex++] ^ 0x55;
 		}
 	}
 	return outputIndex;
 }
 
-int setGameData (Board mines, Board board, Savegame * save) {
+int setGameData (Board board, Savegame * save) {
 	int outputIndex = 0;
 	int x, y;
-	unsigned char buf;
 	save->gameData = malloc (save->size);
 
 	/* iterate through elements on both boards */
 	for (y = 1; y <= board.height; y++) {
 		for (x = 1; x <= board.width; x++) {
-			buf = board.array[x][y];
-			/* if there is a mine, toggle the MSB */
-			if (mines.array[x][y] == 'X')
-				buf ^= 0x80;
-			/* XOR result with a constant and assign to block*/
-			save->gameData[outputIndex++] = buf ^ 0x55;
+			/* XOR array with a constant and assign to block */
+			save->gameData[outputIndex++] = board.array[x][y] ^ 0x55;
 		}
 	}
 	return outputIndex;

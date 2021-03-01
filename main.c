@@ -10,31 +10,26 @@
 #include <time.h>	/* time */
 
 #include "gamefunctions.h"
+#include "savegame.h"
 #include "splash.h"
 
 int main (int argc, char* argv[]) {
-	/* if the user provided valid command line arguments */
-	bool gotArgs = false;
-	/* status returned by game () */
-	int exitCode = GAME_SUCCESS;
-	/* vars for menu navigation */
-	int input = 0;
-	int option;
-	/* dimensions of the game board */
-	int xDim = 9, yDim = 9;
-	int qtyMines = 10;
-	/* x-offset of where to print the HUD */
-	int hudOffset;
-	/* dimensions of the terminal */
-	int termWidth, termHeight;
+	bool gotArgs = false;	/* if the user provided valid command line arguments */
+	int exitCode = GAME_SUCCESS;	/* status returned by game () */
+	int option;				/* used for user input */
+	int xDim = 9, yDim = 9;	/* dimensions of the game board */
+	int qtyMines = 10;		/* number of mines to play with */
+	int hudOffset;			/* x-offset of where to print the HUD */
+	int termWidth, termHeight;	/* dimensions of the terminal */
 
 	/* savegame struct to load game */
 	Savegame savegame;
 	Savegame * saveptr = &savegame;
+
 	/* loadSaveFile returns -1 if error opening file */
 	bool saveFileExists = (loadSaveFile ("savefile", saveptr) != -1);
 
-	srand (time (0));
+	srand (time (NULL));
 	initscr ();
 	keypad (stdscr, true);
 	noecho ();
@@ -44,8 +39,8 @@ int main (int argc, char* argv[]) {
 	mousemask (ALL_MOUSE_EVENTS, &old);
 	addstr (SPLASH);
 	curs_set (0);
-	wgetch (stdscr);
-	curs_set (0);
+	/* press any key to continue */
+	getch ();
 	clear ();
 	refresh ();
 
@@ -75,7 +70,13 @@ int main (int argc, char* argv[]) {
 	if (qtyMines > xDim * yDim - 1)
 		qtyMines = xDim * yDim - 1;
 
+	/* initialize colors */
 	start_color ();
+	init_pair (1, COLOR_WHITE, COLOR_BLACK);	/* default pair */
+	init_pair (2, COLOR_BLACK, COLOR_WHITE);	/* inverted default */
+	init_pair (3, COLOR_RED,   COLOR_BLACK);	/* for exploded mines and wrong flags */
+	init_pair (4, COLOR_GREEN, COLOR_BLACK);	/* for correct flags and unexploded mines */
+	init_pair (5, COLOR_CYAN,  COLOR_BLACK);	/* for numbers */
 
 	/* determine whether to load game or start new game */
 	if (!gotArgs) {
@@ -141,10 +142,10 @@ int main (int argc, char* argv[]) {
 			/* if player won or lost */
 			mvprintw (10, hudOffset, "Play again? (Y/N)");
 			mvprintw (11, hudOffset, ">");
-			input = 0;
-			while (!(input == 'Y' || input == 'N'))
-				input = toupper (getch ());
-			if (input == 'N')
+			option = 0;
+			while (!(option == 'Y' || option == 'N'))
+				option = toupper (getch ());
+			if (option == 'N')
 				break;
 		} else if (exitCode == GAME_EXIT) {
 			/* if player exited manually */

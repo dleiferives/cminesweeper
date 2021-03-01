@@ -26,11 +26,11 @@ typedef struct {
 /* utility function declarations */
 
 /* decodes game data from the savegame into the mine and board structs */
-int getGameData (Board * mines, Board * board, Savegame save);
+int getGameData (Board * board, Savegame save);
 
 /* encodes game data from the mine and board structs into the savegame;
    REMEMBER TO FREE saveptr->gameData AFTER CALLING */
-int setGameData (Board mines, Board board, Savegame * saveptr);
+int setGameData (Board board, Savegame * saveptr);
 
 /* write savegame save to disk */
 int writeSaveFile (const char * filename, Savegame save);

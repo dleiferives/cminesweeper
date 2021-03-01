@@ -18,6 +18,7 @@ int printBoardCustom (Board board, bool hide, chtype mineChar, chtype flagChar) 
 	int x, y;
 	int line = 1;
 
+	/* numbers for the top of the board */
 	mvprintw (line, 0, "|  ");
 	for (x = 0; x <= board.width; x++) {
 		if (x % 5 == 0) printw ("%02d", x);
@@ -28,6 +29,7 @@ int printBoardCustom (Board board, bool hide, chtype mineChar, chtype flagChar) 
 		for (x = 0; x < (4 - board.width); x++) printw ("  ");
 	addch ('|' | COLOR_PAIR (1));
 	
+	/* tick marks under the numbers */
 	mvprintw(++line, 0, "|  ");
 	for (x = 0; x <= board.width; x++) {
 		if (x % 5 == 0) printw ("| ");
@@ -38,18 +40,19 @@ int printBoardCustom (Board board, bool hide, chtype mineChar, chtype flagChar) 
 		for (x = 0; x < (4 - board.width); x++) printw ("  ");
 	addch ('|' | COLOR_PAIR (1));
 
-
+	/* the actual minefield */
 	for (y = 1; y <= board.height; y++) {
 		mvprintw (++line, 0, "|%02d-", y);
 		for (x = 1; x <= board.width; x++) {
 			addch (' ');
-			if (hide) addch ('+');
+			if (hide)
+				addch ('+');
 			else {
-				if ('0' <= board.array[x][y] && board.array[x][y] <= '9') {
-					addch (board.array[x][y] | COLOR_PAIR (5));
+				if ('0' <= (board.array[x][y] & MASK_CHAR) && (board.array[x][y] & MASK_CHAR) <= '9') {
+					addch ((board.array[x][y] & MASK_CHAR) | COLOR_PAIR (5));
 					chars++;
 				}
-				else switch (board.array[x][y]) {
+				else switch (board.array[x][y] & MASK_CHAR) {
 				case '+':
 					addch ('+' | COLOR_PAIR (0));
 					break;
@@ -119,38 +122,41 @@ int printFrame (Board board) {
 	return 0;
 }
 
-int initializeMines (Board * mines) {
+int initializeMines (Board * board) {
 	int mineCount = 0;
 	int x, y;
 
-	for (y = 1; y < mines->height + 1; y++) {
-		for (x = 1; x < mines->width + 1; x++) {
-			mines->array[x][y] = '+';
+	for (y = 1; y < board->height + 1; y++) {
+		for (x = 1; x < board->width + 1; x++) {
+			/* unset mine bit */
+			board->array[x][y] &= ~MASK_MINE;
 		}
 	}
 
-	while (mineCount < mines->mineCount) {
-		x = rand () % (mines->width) + 1;
-		y = rand () % (mines->height) + 1;
-		if (mines->array[x][y] != 'X') {
-			mines->array[x][y] = 'X';
+	while (mineCount < board->mineCount) {
+		x = rand () % (board->width) + 1;
+		y = rand () % (board->height) + 1;
+		if (!(board->array[x][y] & MASK_MINE)) {
+			board->array[x][y] |= MASK_MINE;
 			mineCount++;
 		}
-		if (mineCount > (mines->width * mines->height) - 2) break;
+		if (mineCount > (board->width * board->height) - 2) break;
 	}
 
 	return mineCount;
 }
 
-int overlayMines (Board mines, Board * board) {
+int overlayMines (Board * board) {
 	int x, y;
-	for (y = 1; y < mines.height + 2; y++) {
-		for (x = 1; x < mines.width + 2; x++) {
-			if (mines.array[x][y] == 'X') {
-				if (board->array[x][y] == 'P') {
-					board->array[x][y] = 'F';
+	for (y = 1; y < board->height + 2; y++) {
+		for (x = 1; x < board->width + 2; x++) {
+			if (board->array[x][y] & MASK_MINE) {
+				if ((board->array[x][y] & MASK_CHAR) == 'P') {
+					board->array[x][y] &= ~MASK_CHAR;	/* clear char */
+					board->array[x][y] |= 'F';			/* assign char */
 				} else {
-					board->array[x][y] = 'X';
+					board->array[x][y] &= ~MASK_CHAR;	/* clear char */
+					board->array[x][y] |= 'X';			/* assign char */
 				}
 			}
 		}
@@ -169,14 +175,14 @@ int numMines (Board board, int x, int y) {
 
 	for (k = -1; k <= 1; k++) {
 		for (h = -1; h <= 1; h++) {
-			if (board.array[x + h][y + k] == 'X') numOfMines++;
+			if (board.array[x + h][y + k] & MASK_MINE) numOfMines++;
 		}
 	}
 
 	return numOfMines;
 }
 
-int openSquares (Board mines, Board * board, int x, int y) {
+int openSquares (Board * board, int x, int y) {
 	/* used for relative navigation of the board array */
 	int h, k;
 	int neighbors = 0;
@@ -186,29 +192,31 @@ int openSquares (Board mines, Board * board, int x, int y) {
 		return -1;
 
 	/* return if this coordinate is flagged */
-	if (board->array[x][y] == 'P')
+	if ((board->array[x][y] & MASK_CHAR) == 'P')
 		return 0;
 
 	/* now that all is well, count the number of neighbors.
 	   note that this function assumes that there is not a mine at (x, y), 
 	   since the game function is responsible for handling that first */
-	neighbors = numMines (mines, x, y);
+	neighbors = numMines (*board, x, y);
 	if (neighbors > 0) {
-		board->array[x][y] = '0' + neighbors;
+		board->array[x][y] &= ~MASK_CHAR;		/* clear char */
+		board->array[x][y] |= '0' + neighbors;	/* assign char */
 		return 0;
 	} else {
 		/* if this coordinate has already been marked as opened by the openSquares 
 		   function, then return, to avoid infinite recursion. Otherwise, mark it. */
-		if (board->array[x][y] == ' ')
+		if ((board->array[x][y] & MASK_CHAR) == ' ') {
 			return 0;
-		else
-			board->array[x][y] = ' ';
-
+		} else {
+			board->array[x][y] &= ~MASK_CHAR;	/* clear char */
+			board->array[x][y] |= ' ';			/* assign char */
+		}
 		/* at this point, we know there are no mines nearby, so we will recursively
 		   keep opening squares until all the necessary squares are open. */
 		for (k = -1; k <= 1; k++) {
 			for (h = -1; h <= 1; h++) {
-				openSquares (mines, board, x + h, y + k);
+				openSquares (board, x + h, y + k);
 			}
 		}
 	}
@@ -218,12 +226,15 @@ int openSquares (Board mines, Board * board, int x, int y) {
 	return 0;
 }
 
-bool allClear (Board mines, Board board) {
+bool allClear (Board board) {
 	int x, y;
+	char buf;
 
-	for (y = 1; y <= mines.height; y++) {
-		for (x = 1; x <= mines.width; x++) {
-			if (mines.array[x][y] == '+' && (board.array[x][y] == '+' || board.array[x][y] == 'P')) {
+	for (y = 1; y <= board.height; y++) {
+		for (x = 1; x <= board.width; x++) {
+			buf = board.array[x][y];
+			if (!(buf & MASK_MINE) && ((buf & MASK_CHAR) == '+' || (buf & MASK_CHAR) == 'P')) {
+				/* return false if a square has no mine but is still covered */
 				return false;
 			}
 		}
@@ -348,12 +359,6 @@ int menu (int optc, const char * title, ...) {
 
 int tutorial () {
 	int x, y;
-	Board mines;
-	mines.width = 9;
-	mines.height = 9;
-	mines.mineCount = 10;
-	initBoardArray (&mines);
-
 	Board vMem;
 	vMem.width = 9;
 	vMem.height = 9;
@@ -365,17 +370,9 @@ int tutorial () {
 
 	curs_set (1);
 
-	/* initialize boards */
-	// for (y = 1; y <= 10; y++) {
-	// 	for (x = 1; x <= 10; x++) {
-	// 		mines.array[x][y] = '+';
-	// 		vMem.array[x][y] = '+';
-	// 	}
-	// }
-
-	/* write mine data to mine struct */
+	/* write mine data to board struct */
 	for (x = 0; x < 10; x++) {
-		mines.array[xm[x]][ym[x]] = 'X';
+		vMem.array[xm[x]][ym[x]] |= MASK_MINE;
 	}
 
 	clear ();
@@ -394,9 +391,9 @@ int tutorial () {
 
 	mvaddstr (16, 0, "Uncovering a square will make it display a number representing the number of mines in the 8 squares adjacent to it.\n\n\nPress any key to continue...\n");
 	move (1, 0);
-	vMem.array[2][4] = 48 + numMines (mines, 2, 4);
+	vMem.array[2][4] = '0' + numMines (vMem, 2, 4);
 	if (vMem.array[2][4] == '0') vMem.array[2][4] = ' ';
-	openSquares (mines, &vMem, 2, 4);
+	openSquares (&vMem, 2, 4);
 	printBoard (vMem);
 	move (20, 0);
 	refresh ();
@@ -404,9 +401,9 @@ int tutorial () {
 
 	mvaddstr (16, 0, "If you uncover a square surrounded by 0 mines, the game will automatically open squares until all of the adjacent blank squares are open.\n\nPress any key to continue...\n");
 	move (1, 0);
-	vMem.array[4][7] = 48 + numMines (mines, 4, 7);
+	vMem.array[4][7] = '0' + numMines (vMem, 4, 7);
 	if (vMem.array[4][7] == '0') vMem.array[4][7] = ' ';
-	openSquares (mines, &vMem, 4, 7);
+	openSquares (&vMem, 4, 7);
 	printBoard (vMem);
 	move (20, 0);
 	refresh ();
@@ -414,10 +411,10 @@ int tutorial () {
 
 	mvaddstr (16, 0, "Once you are certain that a square contains a mine, you can flag it to avoid accidentally opening it.\n\n\nPress any key to continue...\n");
 	move (1, 0);
-	vMem.array[1][6] = 'P';
-	vMem.array[6][7] = 'P';
-	vMem.array[6][8] = 'P';
-	vMem.array[6][9] = 'P';
+	vMem.array[1][6] = 'P' | MASK_MINE;
+	vMem.array[6][7] = 'P' | MASK_MINE;
+	vMem.array[6][8] = 'P' | MASK_MINE;
+	vMem.array[6][9] = 'P' | MASK_MINE;
 	printBoard (vMem);
 	move (20, 0);
 	refresh ();
@@ -426,9 +423,16 @@ int tutorial () {
 	mvaddstr (16, 0, "The game will end when you either uncover all mine-free squares, or as soon as you uncover a mine.\nGood luck, and SWEEP THOSE MINES!\n\nPress any key to continue...\n");
 	for (y = 1; y <= 10; y++) {
 		for (x = 1; x <= 10; x++) {
-			vMem.array[x][y] = 48 + numMines (mines, x, y);
-			if (vMem.array[x][y] == '0') vMem.array[x][y] = ' ';
-			if (mines.array[x][y] == 'X') vMem.array[x][y] = 'F';
+			vMem.array[x][y] &= ~MASK_CHAR;
+			vMem.array[x][y] |= '0' + numMines (vMem, x, y);
+			if ((vMem.array[x][y] & MASK_CHAR) == '0') {
+				vMem.array[x][y] &= ~MASK_CHAR;
+				vMem.array[x][y] |= ' ';
+			}
+			if (vMem.array[x][y] == 'X') {
+				vMem.array[x][y] &= ~MASK_CHAR;
+				vMem.array[x][y] |= 'F';
+			}
 		}
 	}
 	move (1, 0);
@@ -440,7 +444,6 @@ int tutorial () {
 	mvprintw (19, 0, "\n");
 	curs_set (2);
 
-	freeBoardArray (&mines);
 	freeBoardArray (&vMem);
 	return 0;
 }
