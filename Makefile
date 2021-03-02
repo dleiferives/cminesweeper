@@ -1,7 +1,11 @@
-all: main.c
-	gcc -o cminesweeper main.c game.c board.c gamefunctions.c savegame.c -lncurses -lm
-	mkdir -p ~/.cminesweeper
+CC = gcc
+srcfiles = source/main.c source/game.c source/board.c source/gamefunctions.c source/savegame.c
+output = cminesweeper
 
-debug: main.c
-	gcc -o cminesweeper -g -rdynamic -ggdb3 -Wall main.c game.c board.c gamefunctions.c savegame.c -lncurses -lm
-	mkdir -p ~/.cminesweeper
+all: $(srcfiles)
+	$(CC) -o $(output) -Isource $(srcfiles) -lncurses -lm
+	mkdir -p $(HOME)/.cminesweeper
+
+debug: $(srcfiles)
+	$(CC) -o $(output) -Isource -g -rdynamic -ggdb3 -Wall $(srcfiles) -lncurses -lm
+	mkdir -p $(HOME)/.cminesweeper
