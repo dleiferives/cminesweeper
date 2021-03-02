@@ -10,7 +10,7 @@ typedef struct {
     int width;
     int height;
     long mineCount;
-    char ** array;
+    unsigned char ** array;
 } Board;
 
 int initBoardArray (Board * board);

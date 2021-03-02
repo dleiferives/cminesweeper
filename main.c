@@ -1,12 +1,9 @@
 /* main.c */
 
-#include <stdlib.h>	
-#include <stdio.h>	
-#include <curses.h>	
-#include <stdint.h>	
+#include <stdlib.h>
+#include <stdio.h>
+#include <curses.h>
 #include <string.h>	/* strcmp */
-#include <ctype.h>	/* toupper */
-#include <math.h>	/* floorf */
 #include <time.h>	/* time */
 
 #include "gamefunctions.h"
@@ -120,7 +117,6 @@ int main (int argc, char* argv[]) {
 			}
 		} else {
 			/* user chooses to load game */
-			loadSaveFile ("savefile", saveptr);
 			/* update xDim to calculate hudOffset later */
 			xDim = saveptr->width;
 		}
@@ -143,7 +139,7 @@ int main (int argc, char* argv[]) {
 			/* if player won or lost */
 			option = mvmenu (9, hudOffset, 2, "Play again?", "Yes", "No");
 			
-			if (option == 1)
+			if (option != 0)
 				break;
 		} else if (exitCode == GAME_EXIT) {
 			/* if player exited manually */

@@ -73,10 +73,11 @@ int printFrame (Board board);
 #define MENU_TUTORIAL	4
 
 /* macros for game actions */
-#define ACTION_NONE		0
-#define ACTION_BOARD_OP	1
-#define ACTION_CHG_MODE	2
-#define ACTION_ESCAPE	3
+#define ACTION_NONE		0  /* no action */
+#define ACTION_OPEN     1  /* open the current square */
+#define ACTION_FLAG     2  /* place a flag on the current square */
+#define ACTION_AUTO     3  /* automatically open adjacent squares */
+#define ACTION_ESCAPE	4  /* open the pause menu */
 
 /* masks for accessing mine data */
 #define MASK_MINE 0x80  

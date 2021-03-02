@@ -8,9 +8,9 @@
 
 /* allocate memory for array member based on value of dimension members */
 int initBoardArray (Board * board) {
-    board->array = (char **) malloc ((board->width + 2) * sizeof (char *));
+    board->array = (unsigned char **) malloc ((board->width + 2) * sizeof (unsigned char *));
 	for (int i = 0; i < board->width + 2; i++) {
-		board->array[i] = (char *) malloc (board->height + 2);
+		board->array[i] = (unsigned char *) malloc (board->height + 2);
         memset (board->array[i], '+', board->height + 2);
     }
     return 0;

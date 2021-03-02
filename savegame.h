@@ -20,8 +20,8 @@ typedef struct {
 	int32_t flagsPlaced;	/* flags placed by user */
 	uint32_t gameBools;		/* integer storing the state of in-game bools */
 	int32_t cy, cx;			/* cursor coordinates */
-	struct timespec timeOffset;		/* game duration */
-	char * gameData;		/* string of bytes storing board data */
+	struct timespec timeOffset;	/* game duration */
+	unsigned char * gameData;	/* string of bytes storing board data */
 } Savegame;
 
 /* prototypes for utility functions */

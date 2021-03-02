@@ -1,5 +1,8 @@
 /* game.c */
 
+/* TODO:
+   check return statements */
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <curses.h>
@@ -47,8 +50,6 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	struct timespec timeMenu;	/* time spent in the menu */
 	struct timespec timeBuffer;	/* buffer used in time calculations */
 
-	/* stores whether the user used the primary or secondary button */
-	uint8_t op = 0;
 	/* stores what action will be performed by the game */
 	uint8_t action;
 	
@@ -142,48 +143,65 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		nodelay (stdscr, false);
 		Sleep (16); /* sleep 1/60th of a second */
 
-		op = 0;
+		/* switch to process keystrokes */
+		action = ACTION_NONE;
 		switch (buf) {
 		case 'q':
-		case 27:	/* key code for Esc */
+		case 27: /* key code for Esc */
+			/* open menu */
 			action = ACTION_ESCAPE;
 			break;
 		case KEY_MOUSE:
 			getmouse (&m_event);
 			cx = m_event.x;
 			cy = m_event.y;
-			if (m_event.bstate & BUTTON1_CLICKED) {
-				action = ACTION_BOARD_OP;
-				op = 1;
-			}
-			if (m_event.bstate & BUTTON3_CLICKED) {
-				action = ACTION_BOARD_OP;
-				op = 2;
+
+			if (isdigit (board.array[x][y])) {
+				/* check whether player clicked a number */
+				action = ACTION_AUTO;
+			} else if (m_event.bstate & BUTTON1_CLICKED) {
+				action = isFlagMode
+					? ACTION_FLAG
+					: ACTION_OPEN;
+			} else if (m_event.bstate & BUTTON3_CLICKED) {
+				action = isFlagMode
+					? ACTION_OPEN
+					: ACTION_FLAG;
 			}
 			break;
+		case 32: /* spacebar */
 		case 'm':
-			action = ACTION_CHG_MODE;
+			/* toggle flag mode */
+			isFlagMode = !isFlagMode;
 			break;
+		case 10: /* Return */
 		case 'z':
 		case '/':
-			op = 1;
-			action = ACTION_BOARD_OP;
+			/* primary select button */
+			if (isdigit (board.array[x][y])) {
+				/* check whether player clicked a number */
+				action = ACTION_AUTO;
+			} else {
+				action = isFlagMode
+					? ACTION_FLAG
+					: ACTION_OPEN;
+			}
 			break;
 		case 'x':
 		case '\'':
-			op = 2;
-			action = ACTION_BOARD_OP;
+			/* secondary select button */
+			if (isdigit (board.array[x][y])) {
+				/* check whether player clicked a number */
+				action = ACTION_AUTO;
+			} else {
+				action = isFlagMode
+					? ACTION_OPEN
+					: ACTION_FLAG;
+			}
 			break;
 		case 'r':
+			freeBoardArray (&board);
 			return GAME_RESTART;
-		case 10: /* key code for Return */
-			getyx (stdscr, cy, cx);
-			op = 1;
-			action = ACTION_BOARD_OP;
-			break;
-		case 32: /* key code for space */
-			action = ACTION_CHG_MODE;
-			break;
 		case KEY_UP:
 		case 'w':
 			cy--;
@@ -200,8 +218,6 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		case 'd':
 			cx += 2;
 			break;
-		default:
-			action = ACTION_NONE;
 		}
 
 		/* Round the cursor position down to nearest grid coordinate.
@@ -228,9 +244,9 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		x = (cx - 2) / 2;
 		y = cy - 2;
 		
-		/* This switch is responsible for handling the user input gathered in the beginning. */
+		/* switch to do board operations or open menu */
 		switch (action) {
-		case ACTION_BOARD_OP:
+		case ACTION_OPEN:
 			/* make sure that the player does not die on the first move */
 			if (!firstClick) {
 				buf = 0;
@@ -252,112 +268,78 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 					}
 				}
 			}
-
+			
+			/* if player selects a MINE square to uncover */
 			if ((board.array[x][y] & MASK_MINE) && ((board.array[x][y] & MASK_CHAR) != 'P')) {
-				/* if user selects a MINE square to uncover */
-				if ((!isFlagMode && op == 1) || (isFlagMode && op == 2)) {
-					clear ();
-					clearok (stdscr, 0);
+				clear ();
+				clearok (stdscr, 0);
+				overlayMines (&board);
+				/* clear character and assign new value */
+				board.array[x][y] &= MASK_MINE; board.array[x][y] |= '#';
+				printBoard (board);
+				printFrame (board);
+				printCtrlsyx (0, hudOffset);
+				mvaddstr (8, hudOffset, "You died! Game over.\n");
+				refresh ();
+				isAlive = false;
+				exitGame = true;
+			} else {
+				openSquares (&board, x, y);
+				firstClick = true;
+			}
+			break;
+		case ACTION_FLAG:
+			/* flag the current square */
+			if ((board.array[x][y] & MASK_CHAR) == '+') {
+				board.array[x][y] &= ~MASK_CHAR;	/* clear char */
+				board.array[x][y] |= 'P';		/* assign char */
+				flagsPlaced++;
+			} else if ((board.array[x][y] & MASK_CHAR) == 'P') {
+				board.array[x][y] &= ~MASK_CHAR;	/* clear char */
+				board.array[x][y] |= '+';		/* assign char */
+				flagsPlaced--;
+			}
+			break;
+		case ACTION_AUTO:
+			/* user selected a square holding a number */
+			buf = 0;
+			/* count number of adjacent flags */
+			for (k = -1; k <= 1; k++) {
+				for (h = -1; h <= 1; h++) {
+					if ((board.array[x + h][y + k] & MASK_CHAR) == 'P')
+						buf++;
+				}
+			}
+			/* if number of adjacent flags == number displayed on square */
+			if (buf == ((board.array[x][y] & MASK_CHAR) - '0')) {
+				buf = 0;
+				for (k = -1; k <= 1; k++) {
+					for (h = -1; h <= 1; h++) {
+						/* for each adjacent square */
+						if ((board.array[x + h][y + k] & MASK_CHAR) == '+') {
+							if (!(board.array[x + h][y + k] & MASK_MINE)) {
+								/* if the square is not a mine */
+								openSquares (&board, x + h, y + k);
+							} else {
+								/* if the square is a mine */
+								buf = 1;
+								board.array[x + h][y + k] &= ~MASK_CHAR;
+								board.array[x + h][y + k] |= '#';
+							}
+						}
+					}
+				}
+				if (buf == 1) {
 					overlayMines (&board);
-					/* clear character and assign new value */
-					board.array[x][y] &= MASK_MINE; board.array[x][y] |= '#';
+					move (1, 0);
 					printBoard (board);
-					printFrame (board);
 					printCtrlsyx (0, hudOffset);
 					mvaddstr (8, hudOffset, "You died! Game over.\n");
 					refresh ();
 					isAlive = false;
 					exitGame = true;
-					break;
 				}
 			}
-			/* else... */
-			if (('1' <= (board.array[x][y] & MASK_CHAR)) && ((board.array[x][y] & MASK_CHAR) <= '9')) {
-				buf = 0;
-				/* count number of adjacent flags */
-				for (k = -1; k <= 1; k++) {
-					for (h = -1; h <= 1; h++) {
-						if ((board.array[x + h][y + k] & MASK_CHAR) == 'P') buf++;
-					}
-				}
-				/* if number of adjacent flags == number displayed on square */
-				if (buf == ((board.array[x][y] & MASK_CHAR) - '0')) {
-					buf = 0;
-					for (k = -1; k <= 1; k++) {
-						for (h = -1; h <= 1; h++) {
-							/* for each adjacent square */
-							if ((board.array[x + h][y + k] & MASK_CHAR) == '+') {
-								if (!(board.array[x + h][y + k] & MASK_MINE)) {
-									/* if the square is not a mine */
-									openSquares (&board, x + h, y + k);
-								} else {
-									/* if the square is a mine */
-									buf = 1;
-									board.array[x + h][y + k] &= ~MASK_CHAR;
-									board.array[x + h][y + k] |= '#';
-								}
-							}
-						}
-					}
-					if (buf == 1) {
-						overlayMines (&board);
-						move (1, 0);
-						printBoard (board);
-						printCtrlsyx (0, hudOffset);
-						mvaddstr (8, hudOffset, "You died! Game over.\n");
-						refresh ();
-						isAlive = false;
-						exitGame = true;
-						break;
-					}
-				}
-			}
-
-			else {
-				if (!isFlagMode) {
-					/* game set to normal mode */
-					switch (op) {
-					case 1:
-						openSquares (&board, x, y);
-						firstClick = true;
-						break;
-					case 2:
-						if ((board.array[x][y] & MASK_CHAR) == '+') {
-							board.array[x][y] &= ~MASK_CHAR;	/* clear char */
-							board.array[x][y] |= 'P';		/* assign char */
-							flagsPlaced++;
-						} else if ((board.array[x][y] & MASK_CHAR) == 'P') {
-							board.array[x][y] &= ~MASK_CHAR;	/* clear char */
-							board.array[x][y] |= '+';		/* assign char */
-							flagsPlaced--;
-						}
-						break;
-					}
-				} else {
-					/* game is set to flag mode */
-					switch (op) {
-					case 1:
-						if ((board.array[x][y] & MASK_CHAR) == '+') {
-							board.array[x][y] &= ~MASK_CHAR;	/* clear char */
-							board.array[x][y] |= 'P';		/* assign char */
-							flagsPlaced++;
-						} else if ((board.array[x][y] & MASK_CHAR) == 'P') {
-							board.array[x][y] &= ~MASK_CHAR;	/* clear char */
-							board.array[x][y] |= '+';		/* assign char */
-							flagsPlaced--;
-						}
-						break;
-					case 2:
-						openSquares (&board, x, y);
-						firstClick = true;
-						break;
-					}
-				}
-			}
-			break;
-		case ACTION_CHG_MODE:
-			/* toggle flag mode */
-			isFlagMode = !isFlagMode;
 			break;
 		case ACTION_ESCAPE:
 			/* open the pause menu */
