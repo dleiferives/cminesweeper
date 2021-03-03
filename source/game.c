@@ -1,8 +1,5 @@
 /* game.c */
 
-/* TODO:
-   change shape of `cursor' */
-
 #include <stdlib.h>
 #include <stdint.h>
 #include <curses.h>
@@ -24,20 +21,20 @@ void addTimespec (struct timespec * dest, struct timespec * src);		/* subtracts 
 double timespecToDouble (struct timespec spec);							/* converts a timespec interval to a float value */
 
 int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
-	/*** INITIALIZATION ***/
+	/*** DECLARATIONS ***/
 	
-	int buf = -1;	/* general purpose buffer */
+	int buf;	/* general purpose buffer */
 	
 	/* variables for navigation */
-	int x = 0, y = 0;	/* absolute array coordinates */
+	int x = 1, y = 1;	/* absolute array coordinates */
 	int h, k;			/* relative array coordinates */
 	int cx, cy;			/* cursor coordinates */
 	int hudOffset;		/* x-offset of where to print the HUD */
 	
 	/* variables storing info about the game state */
 	bool isFlagMode;		/* flag mode is enabled */
-	bool firstClick;		/* player has made the first click */
-	bool isAlive = true;	/* player is alive */
+	bool firstClick;		/* the first click of the game has been made */
+	bool isAlive = true;	/* the player is alive */
 	bool exitGame = false;	/* the game is set to exit */
 	int flagsPlaced;		/* number of flags placed */
 
@@ -53,7 +50,8 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	/* stores what action will be performed by the game */
 	uint8_t action;
 	
-	/* savegame handling */
+	/*** INITIALIZATION ***/
+
 	if (saveptr != NULL) {
 		/* if a valid Savegame pointer was passed, initialize
 		   game based on the contents of that structure */
@@ -102,6 +100,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	/*** BEGIN GAMEPLAY ***/
 
 	noecho ();
+	curs_set (0);	/* cursor invisible */
 	clear ();
 	
 	while (isAlive) {
@@ -129,8 +128,19 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			move (cy, cx);
 		}
 
-		/* set cursor to very visible */
-		curs_set (2);
+		/* draw virtual cursor, colored based on the character under it */
+		buf = board.array[x][y] & MASK_CHAR;
+		if (isdigit (buf)) {
+			/* color for numbers */
+			chgat (2, A_REVERSE, 5, NULL);
+		} else if (buf == 'P') {
+			/* color for flags */
+			chgat (2, A_REVERSE, 3, NULL);
+		} else {
+			/* default color */
+			chgat (2, A_REVERSE, 1, NULL);
+		}
+		refresh ();
 
 		/* get input */
 		nodelay (stdscr, true);
@@ -151,10 +161,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			cx = m_event.x;
 			cy = m_event.y;
 
-			if (isdigit (board.array[x][y])) {
-				/* check whether player clicked a number */
-				action = ACTION_AUTO;
-			} else if (m_event.bstate & BUTTON1_CLICKED) {
+			if (m_event.bstate & BUTTON1_CLICKED) {
 				action = isFlagMode
 					? ACTION_FLAG
 					: ACTION_OPEN;
@@ -173,26 +180,16 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		case 'z':
 		case '/':
 			/* primary select button */
-			if (isdigit (board.array[x][y])) {
-				/* check whether player clicked a number */
-				action = ACTION_AUTO;
-			} else {
-				action = isFlagMode
-					? ACTION_FLAG
-					: ACTION_OPEN;
-			}
+			action = isFlagMode
+				? ACTION_FLAG
+				: ACTION_OPEN;
 			break;
 		case 'x':
 		case '\'':
 			/* secondary select button */
-			if (isdigit (board.array[x][y])) {
-				/* check whether player clicked a number */
-				action = ACTION_AUTO;
-			} else {
-				action = isFlagMode
-					? ACTION_OPEN
-					: ACTION_FLAG;
-			}
+			action = isFlagMode
+				? ACTION_OPEN
+				: ACTION_FLAG;
 			break;
 		case 'r':
 			freeBoardArray (&board);
@@ -218,7 +215,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		/* Round the cursor position down to nearest grid coordinate.
 		   This is done in case the player uses the mouse and clicks 
 		   on an off-character */
-		if (cx % 2 == 1)
+		if (cx % 2 == 0)
 			cx--;
 		
 		/* if the cursor is out of bounds, place it back in the valid range */
@@ -226,18 +223,18 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			cy = 1;
 		if (cy > + yDim)
 			cy = + yDim;
-		if (cx < 2)
-			cx = 2;
-		if (cx > 2 * xDim)
-			cx = 2 * xDim;
-		
-		/* finally, move the cursor */
-		move (cy, cx);
-		refresh ();
+		if (cx < 1)
+			cx = 1;
+		if (cx > 2 * xDim - 1)
+			cx = 2 * xDim - 1;
 
 		/* translate cursor coordinates to array coordinates */
-		x = cx / 2;
+		x = cx / 2 + 1;
 		y = cy;
+
+		/* check whether player clicked a number */
+		if (isdigit (board.array[x][y]) && (action == ACTION_OPEN || action == ACTION_FLAG))
+			action = ACTION_AUTO;
 		
 		/* switch to do board operations or open menu */
 		switch (action) {
