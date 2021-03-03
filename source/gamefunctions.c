@@ -365,9 +365,9 @@ int tutorial () {
 	}
 
 	clear ();
-	addstr ("+= Tutorial ==============+\n");
+	addstr ("+= Tutorial =======+\n");
 	printBoard (vMem);
-	addstr ("+=========================+\n");
+	addstr ("\n+==================+\n");
 	mvaddstr (16, 0, "Welcome to minesweeper!\n\n\nPress any key to continue...");
 	move (20, 0);
 	refresh ();
@@ -380,8 +380,7 @@ int tutorial () {
 
 	mvaddstr (16, 0, "Uncovering a square will make it display a number representing the number of mines in the 8 squares adjacent to it.\n\n\nPress any key to continue...\n");
 	move (1, 0);
-	vMem.array[2][4] = '0' + numMines (vMem, 2, 4);
-	if (vMem.array[2][4] == '0') vMem.array[2][4] = ' ';
+	vMem.array[2][4] = '0' + numMines (vMem, 2, 4);\
 	openSquares (&vMem, 2, 4);
 	printBoard (vMem);
 	move (20, 0);
@@ -391,7 +390,6 @@ int tutorial () {
 	mvaddstr (16, 0, "If you uncover a square surrounded by 0 mines, the game will automatically open squares until all of the adjacent blank squares are open.\n\nPress any key to continue...\n");
 	move (1, 0);
 	vMem.array[4][7] = '0' + numMines (vMem, 4, 7);
-	if (vMem.array[4][7] == '0') vMem.array[4][7] = ' ';
 	openSquares (&vMem, 4, 7);
 	printBoard (vMem);
 	move (20, 0);
@@ -418,15 +416,13 @@ int tutorial () {
 				vMem.array[x][y] &= ~MASK_CHAR;
 				vMem.array[x][y] |= ' ';
 			}
-			if (vMem.array[x][y] == 'X') {
+			if (vMem.array[x][y] & MASK_MINE) {
 				vMem.array[x][y] &= ~MASK_CHAR;
 				vMem.array[x][y] |= 'F';
 			}
 		}
 	}
-	move (1, 0);
 	printBoard (vMem);
-	move (20, 0);
 	refresh ();
 	getch ();
 

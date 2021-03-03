@@ -1,5 +1,8 @@
 /* game.c */
 
+/* TODO:
+   reposition HUD */ 
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <curses.h>
@@ -397,6 +400,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 				break;
 			case MENU_TUTORIAL:
 				tutorial ();
+				curs_set (0);
 				clear ();
 				break;
 			}
