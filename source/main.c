@@ -93,7 +93,7 @@ int main (int argc, char* argv[]) {
 
 			option = menu (3, "Choose difficulty",
 				"Beginner    : 9x9, 10 mines",
-				"Intermediate: 16x16, 40 mines",
+				"Intermediate: 16x16, 40 mines ",
 				"Advanced    : 30x24, 99 mines");
 
 			switch (option) {

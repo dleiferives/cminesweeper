@@ -1,7 +1,9 @@
 /* game.c */
 
 /* TODO:
-   - add smiley face */ 
+   - add smiley face
+   - delete savefile if player dies
+   - notify player of save error */ 
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -323,7 +325,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			
 			printBlank (board);
 			buf = menu (5, "Paused",
-				"Return to game",
+				"Return to game ",
 				"New game",
 				"Save game",
 				"Exit game",
@@ -397,6 +399,11 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 				setGameData (board, &save);
 
 				buf = writeSaveFile ("savefile", save);
+				if (buf == -1) {
+					/* save error */
+					mvmenu (7, hudOffset, 1, "Error saving game!", "Okay");
+					clear ();
+				}
 				free (save.gameData);
 				break;
 			case MENU_TUTORIAL:

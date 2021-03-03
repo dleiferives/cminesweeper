@@ -277,33 +277,33 @@ int vmenu (int y, int x, int optc, const char * title, va_list options) {
 		mvprintw (y, x, "+= %s ", title);
 		for (k = 0; k < maxLength - titleLength; k++)
 			addch ('=');
-		addstr ("==+");
+		addstr ("=+");
 
 		/* blank space */
 		mvaddstr (y + 1, x, "|     ");
 		for (k = 0; k < maxLength; k++)
 			addch (' ');
-		addstr ("  |");
+		addstr (" |");
 
 		/* print every option */
 		for (i = 0; i < optc; i++) {
 			mvprintw (y + i + 2, x, "| %2d) %s", i + 1, optionNames[i]);
 			for (k = 0; k < maxLength - optionLengths[i]; k++)
 				addch (' ');
-			addstr ("  |");
+			addstr (" |");
 		}
 
 		/* another blank space */
 		mvaddstr (y + i + 2, x, "|     ");
 		for (k = 0; k < maxLength; k++)
 			addch (' ');
-		addstr ("  |");
+		addstr (" |");
 
 		/* end with bottom of border */
 		mvaddstr (y + i + 3, x, "+=====");
 		for (k = 0; k < maxLength; k++)
 			addch ('=');
-		addstr ("==+");
+		addstr ("=+");
 
 		/* draw option pointer */
 		mvaddch (y + option + 2, x + 5, '>' | A_BLINK);
