@@ -1,123 +1,97 @@
 /* gamefunctions.c
    contains definitions for game utility functions */
 
+/* TODO:
+   Remove refresh statement from end of printBoard function */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <curses.h>
-#include <ctype.h>	/* toupper */
+#include <ctype.h>	/* toupper, isdigit */
 #include <string.h>	/* strlen */
 
 #include "gamefunctions.h"
 #include "board.h"
 
-int printBoardCustom (Board board, bool hide, chtype mineChar, chtype flagChar) {
+int printBoardCustom (Board board, bool hide, chtype mineChar) {
 	int chars = 0;
 	int x, y;
-	int line = 1;
 
-	/* numbers for the top of the board */
-	mvprintw (line, 0, "|  ");
-	for (x = 0; x <= board.width; x++) {
-		if (x % 5 == 0) printw ("%02d", x);
-		else printw ("  ");
-	}
-	printw ("   ");
-	if (board.width < 4)
-		for (x = 0; x < (4 - board.width); x++) printw ("  ");
-	addch ('|' | COLOR_PAIR (1));
-	
-	/* tick marks under the numbers */
-	mvprintw(++line, 0, "|  ");
-	for (x = 0; x <= board.width; x++) {
-		if (x % 5 == 0) printw ("| ");
-		else printw (". ");
-	}
-	printw ("   ");
-	if (board.width < 4)
-		for (x = 0; x < (4 - board.width); x++) printw ("  ");
-	addch ('|' | COLOR_PAIR (1));
-
-	/* the actual minefield */
 	for (y = 1; y <= board.height; y++) {
-		mvprintw (++line, 0, "|%02d-", y);
+		mvaddch (y, 0, '|');
 		for (x = 1; x <= board.width; x++) {
-			addch (' ');
-			if (hide)
-				addch ('+');
-			else {
-				if ('0' <= (board.array[x][y] & MASK_CHAR) && (board.array[x][y] & MASK_CHAR) <= '9') {
+			if (hide) {
+				addch ('[' | COLOR_PAIR (0));
+				addch (']' | COLOR_PAIR (0));
+			} else {
+				if (isdigit (board.array[x][y] & MASK_CHAR)) {
+					/* if character is a number, then print space and number */
+					addch (' ' | COLOR_PAIR (5));
 					addch ((board.array[x][y] & MASK_CHAR) | COLOR_PAIR (5));
 					chars++;
-				}
-				else switch (board.array[x][y] & MASK_CHAR) {
-				case '+':
-					addch ('+' | COLOR_PAIR (0));
-					break;
-				case 'X':
-					addch (mineChar);
-					break;
-				case '#':
-					addch ('#' | COLOR_PAIR (3));
-					break;
-				case 'P':
-					addch (flagChar);
-					break;
-				case 'F':
-					addch ('F' | COLOR_PAIR (4));
-					break;
-				default:
-					addch (' ');
+				} else {
+					switch (board.array[x][y] & MASK_CHAR) {
+					case '+':
+						addch ('[' | COLOR_PAIR (0));
+						addch (']' | COLOR_PAIR (0));
+						break;
+					case 'X':
+						if ((mineChar & A_CHARTEXT) == 0) {
+							addch ('>' | COLOR_PAIR (3));
+							addch ('<' | COLOR_PAIR (3));
+						} else {
+							addch (' ' | (mineChar & A_ATTRIBUTES));
+							addch (mineChar);
+						}
+						break;
+					case '#':
+						addch ('@' | COLOR_PAIR (3));
+						addch ('@' | COLOR_PAIR (3));
+						break;
+					case 'P':
+						addch (' ' | COLOR_PAIR (3));
+						addch ('P' | COLOR_PAIR (3));
+						break;
+					case 'F':
+						addch (' ' | COLOR_PAIR (4));
+						addch ('F' | COLOR_PAIR (4));
+						break;
+					default:
+						addstr ("  ");
+					}
 				}
 			}
-			chars++;
+			chars += 2;
 		}
-		addch (' ' | COLOR_PAIR (1));
-		printw ("-%02d", y);
-		if (board.width < 4)
-			for (x = 0; x < (4 - board.width); x++) printw ("  ");
+		if (board.width < 7) {
+			addch (' ');
+			for (x = 0; x < (7 - board.width); x++) printw ("  ");
+		}
 		addch ('|' | COLOR_PAIR (1));
 	}
-	mvprintw (++line, 0, "|  ");
-	for (x = 0; x <= board.width; x++) {
-		if (x % 5 == 0) printw ("| ");
-		else printw ("' ");
-	}
-	printw ("   ");
-	if (board.width < 4)
-		for (x = 0; x < (4 - board.width); x++) printw ("  ");
-	addch ('|' | COLOR_PAIR (1));
-	
-	mvprintw (++line, 0, "|  ");
-	for (x = 0; x <= board.width; x++) {
-		if (x % 5 == 0) printw ("%02d", x);
-		else printw ("  ");
-	}
-	printw ("   ");
-	if (board.width < 4)
-		for (x = 0; x < (4 - board.width); x++) printw ("  ");
-	addch ('|');
-	move(++line, 0);
 	
 	refresh ();
 	return chars;
 }
 
 int printBoard (Board board) {
-	return printBoardCustom (board, false, (chtype)'X' | COLOR_PAIR(3), (chtype)'P' | COLOR_PAIR(3));
+	return printBoardCustom (board, false, (chtype) 0);
 }
 
 int printFrame (Board board) {
 	int x;
 
 	mvaddstr (0, 0, "+= Minesweeper ");
-	for (x = 4; x < board.width; x++) addstr ("==");
+	for (x = 8; x < board.width; x++) addstr ("==");
+	if (board.width > 7) addch ('=');
 	addstr ("=+");
 
-	mvaddstr (board.height + 5, 0, "+==============");
-	for (x = 4; x < board.width; x++) addstr ("==");
+	mvaddstr (board.height + 1, 0, "+==============");
+	for (x = 8; x < board.width; x++) addstr ("==");
+	if (board.width > 7) addch ('=');
 	addstr ("=+");
 	return 0;
 }
@@ -483,5 +457,5 @@ int printCtrls () {
 }
 
 int printBlank (Board board) {
-	return printBoardCustom (board, true, (chtype)0, (chtype)0);
+	return printBoardCustom (board, true, (chtype) 0);
 }

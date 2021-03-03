@@ -1,7 +1,7 @@
 /* game.c */
 
 /* TODO:
-   check return statements */
+   change shape of `cursor' */
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -84,7 +84,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		flagsPlaced = 0;
 		firstClick = false;
 		/* cursor will be initialized at top left of game board */
-		cy = 3, cx = 5;
+		cy = 1, cx = 1;
 		timeOffset.tv_sec = 0;
 		timeOffset.tv_nsec = 0;
 		/* initialize the boards */
@@ -218,26 +218,26 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		/* Round the cursor position down to nearest grid coordinate.
 		   This is done in case the player uses the mouse and clicks 
 		   on an off-character */
-		if (cx % 2 == 0)
+		if (cx % 2 == 1)
 			cx--;
 		
 		/* if the cursor is out of bounds, place it back in the valid range */
-		if (cy < 3)
-			cy = 3;
-		if (cy > 2 + yDim)
-			cy = 2 + yDim;
-		if (cx < 5)
-			cx = 5;
-		if (cx > 3 + 2 * xDim)
-			cx = 3 + 2 * xDim;
+		if (cy < 1)
+			cy = 1;
+		if (cy > + yDim)
+			cy = + yDim;
+		if (cx < 2)
+			cx = 2;
+		if (cx > 2 * xDim)
+			cx = 2 * xDim;
 		
 		/* finally, move the cursor */
 		move (cy, cx);
 		refresh ();
 
 		/* translate cursor coordinates to array coordinates */
-		x = (cx - 2) / 2;
-		y = cy - 2;
+		x = cx / 2;
+		y = cy;
 		
 		/* switch to do board operations or open menu */
 		switch (action) {
@@ -411,7 +411,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	
 	if (isAlive) {
 		overlayMines (&board);
-		printBoardCustom (board, false, (chtype)'F' | COLOR_PAIR (4), (chtype)'P' | COLOR_PAIR(3));
+		printBoardCustom (board, false, 'F' | COLOR_PAIR (4));
 		mvprintw (7, hudOffset, "[ %02d/%02d ][ %3.3f ]" , flagsPlaced, qtyMines, timespecToDouble (timeBuffer));
 		mvprintw (8, hudOffset, "[ You won!        ]");
 		refresh ();

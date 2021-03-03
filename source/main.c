@@ -68,11 +68,11 @@ int main (int argc, char* argv[]) {
 
 	/* initialize colors */
 	start_color ();
-	init_pair (1, COLOR_WHITE, COLOR_BLACK);	/* default pair */
-	init_pair (2, COLOR_BLACK, COLOR_WHITE);	/* inverted default */
-	init_pair (3, COLOR_RED,   COLOR_BLACK);	/* for exploded mines and wrong flags */
-	init_pair (4, COLOR_GREEN, COLOR_BLACK);	/* for correct flags and unexploded mines */
-	init_pair (5, COLOR_CYAN,  COLOR_BLACK);	/* for numbers */
+	init_pair (1, COLOR_WHITE,	COLOR_BLACK);	/* default pair */
+	init_pair (2, COLOR_BLACK,	COLOR_WHITE);	/* inverted default */
+	init_pair (3, COLOR_RED,	COLOR_BLACK);	/* for exploded mines and wrong flags */
+	init_pair (4, COLOR_GREEN,	COLOR_BLACK);	/* for correct flags and unexploded mines */
+	init_pair (5, COLOR_CYAN,	COLOR_BLACK);	/* for numbers */
 
 	/* determine whether to load game or start new game */
 	if (!gotArgs) {

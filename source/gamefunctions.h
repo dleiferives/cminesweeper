@@ -10,7 +10,7 @@
 
 /* display a graphical representation of board, displaying mines as mineChar 
    and displaying flags as flagChar, unless hide is set to true */
-int printBoardCustom (Board board, bool hide, chtype mineChar, chtype flagChar);
+int printBoardCustom (Board board, bool hide, chtype mineChar);
 
 /* printBoard with default arguments for hide, mineChar, and flagChar */
 int printBoard (Board board);
