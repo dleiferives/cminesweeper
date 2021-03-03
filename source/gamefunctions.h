@@ -8,11 +8,11 @@
 #include "board.h"
 #include "savegame.h"
 
-/* display a graphical representation of board, displaying mines as mineChar 
-   and displaying flags as flagChar, unless hide is set to true */
+/* Prints a graphical representation of board, displaying mines as mineChar.
+   If hide is true, all squared will be printed as "[]" */
 int printBoardCustom (Board board, bool hide, chtype mineChar);
 
-/* printBoard with default arguments for hide, mineChar, and flagChar */
+/* printBoard with default arguments for hide and mineChar */
 int printBoard (Board board);
 
 /* randomize locations of mines on the board */

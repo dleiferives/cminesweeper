@@ -117,8 +117,13 @@ int main (int argc, char* argv[]) {
 			}
 		} else {
 			/* user chooses to load game */
-			/* update xDim to calculate hudOffset later */
+			/* Even though the first round of the game won't refer to these
+			   dimensions, if the user restarts the game they won't be able to
+			   load the savefile. Instead, they will load a game with identical
+			   dimensions, but new mine locations. */
 			xDim = saveptr->width;
+			yDim = saveptr->height;
+			qtyMines = saveptr->qtyMines;
 		}
 	} else {
 		/* command line arguments were supplied, so don't use a save file */
