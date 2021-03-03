@@ -115,12 +115,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		printFrame (board);
 		printCtrlsyx (0, hudOffset);
 		if (allClear (board)) {
-			/* only if player has won */
-			overlayMines (&board);
-			printBoardCustom (board, false, (chtype)'F' | COLOR_PAIR (4), (chtype)'P' | COLOR_PAIR(3));
-			mvprintw (7, hudOffset, "[ %02d/%02d ][ %3.3f ]" , flagsPlaced, qtyMines, timespecToDouble (timeBuffer));
-			mvprintw (8, hudOffset, "[ You won!        ]");
-			refresh ();
+			/* Break if player has won; note that isAlive is still set to true */
 			break;
 		} else {
 			/* player hasn't won yet */
@@ -271,18 +266,9 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			
 			/* if player selects a MINE square to uncover */
 			if ((board.array[x][y] & MASK_MINE) && ((board.array[x][y] & MASK_CHAR) != 'P')) {
-				clear ();
-				clearok (stdscr, 0);
-				overlayMines (&board);
 				/* clear character and assign new value */
 				board.array[x][y] &= MASK_MINE; board.array[x][y] |= '#';
-				printBoard (board);
-				printFrame (board);
-				printCtrlsyx (0, hudOffset);
-				mvaddstr (8, hudOffset, "You died! Game over.\n");
-				refresh ();
 				isAlive = false;
-				exitGame = true;
 			} else {
 				openSquares (&board, x, y);
 				firstClick = true;
@@ -312,7 +298,6 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			}
 			/* if number of adjacent flags == number displayed on square */
 			if (buf == ((board.array[x][y] & MASK_CHAR) - '0')) {
-				buf = 0;
 				for (k = -1; k <= 1; k++) {
 					for (h = -1; h <= 1; h++) {
 						/* for each adjacent square */
@@ -322,22 +307,12 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 								openSquares (&board, x + h, y + k);
 							} else {
 								/* if the square is a mine */
-								buf = 1;
+								isAlive = false;
 								board.array[x + h][y + k] &= ~MASK_CHAR;
 								board.array[x + h][y + k] |= '#';
 							}
 						}
 					}
-				}
-				if (buf == 1) {
-					overlayMines (&board);
-					move (1, 0);
-					printBoard (board);
-					printCtrlsyx (0, hudOffset);
-					mvaddstr (8, hudOffset, "You died! Game over.\n");
-					refresh ();
-					isAlive = false;
-					exitGame = true;
 				}
 			}
 			break;
@@ -433,12 +408,26 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		if (exitGame) break;
 		refresh ();
 	}
-	/* once player either has won or lost */
-	move (19, 0);
+	
+	if (isAlive) {
+		overlayMines (&board);
+		printBoardCustom (board, false, (chtype)'F' | COLOR_PAIR (4), (chtype)'P' | COLOR_PAIR(3));
+		mvprintw (7, hudOffset, "[ %02d/%02d ][ %3.3f ]" , flagsPlaced, qtyMines, timespecToDouble (timeBuffer));
+		mvprintw (8, hudOffset, "[ You won!        ]");
+		refresh ();
+	} else {
+		clear ();
+		overlayMines (&board);
+		printBoard (board);
+		printFrame (board);
+		printCtrlsyx (0, hudOffset);
+		mvaddstr (8, hudOffset, "You died! Game over.\n");
+		refresh ();
+	}
 
 	freeBoardArray (&board);
 	/* if player exited through menu */
-	if (action == ACTION_ESCAPE) return GAME_EXIT;
+	if (exitGame) return GAME_EXIT;
 	/* GAME_FAILURE and GAME_SUCCESS are set to 0 and 1 respectively, hence why
 	   returning the state of isAlive works. */
 	else return isAlive;
