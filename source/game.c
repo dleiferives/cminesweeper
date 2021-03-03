@@ -97,7 +97,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	}
 
 	/* set the hudOffset */
-	hudOffset = 2 * board.width + 10;
+	hudOffset = 2 * board.width + 3;
 	if (hudOffset < 18) hudOffset = 18;
 
 	/*** BEGIN GAMEPLAY ***/

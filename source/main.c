@@ -126,7 +126,7 @@ int main (int argc, char* argv[]) {
 	}
 
 	/* set the offset now that the dimensions have been set */
-	hudOffset = 2 * xDim + 10;
+	hudOffset = 2 * xDim + 3;
 	if (hudOffset < 18) hudOffset = 18;
 
 	/*** PLAY THE GAME ***/
