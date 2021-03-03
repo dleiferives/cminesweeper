@@ -16,7 +16,7 @@
 #include "gamefunctions.h"
 #include "board.h"
 
-int printBoardCustom (Board board, bool hide, chtype mineChar) {
+int printBoardCustom (Board board, bool hide, chtype mineAttr) {
 	int chars = 0;
 	int x, y;
 
@@ -41,13 +41,13 @@ int printBoardCustom (Board board, bool hide, chtype mineChar) {
 						addch (']' | COLOR_PAIR (0));
 						break;
 					case 'X':
-						if ((mineChar & A_CHARTEXT) == 0) {
-							/* if no custom character was provided */
+						if (mineAttr == 0) {
+							/* if no custom attributes were provided */
 							addch ('>' | COLOR_PAIR (3) | A_BOLD);
 							addch ('<' | COLOR_PAIR (3) | A_BOLD);
 						} else {
-							addch (' ' | (mineChar & A_ATTRIBUTES));
-							addch (mineChar);
+							addch ('|' | mineAttr);
+							addch ('>' | mineAttr);
 						}
 						break;
 					case '#':
@@ -55,12 +55,12 @@ int printBoardCustom (Board board, bool hide, chtype mineChar) {
 						addch ('@' | COLOR_PAIR (3) | A_BOLD);
 						break;
 					case 'P':
-						addch (' ' | COLOR_PAIR (3));
-						addch ('P' | COLOR_PAIR (3));
+						addch ('|' | COLOR_PAIR (3) | A_BOLD);
+						addch ('>' | COLOR_PAIR (3) | A_BOLD);
 						break;
 					case 'F':
-						addch (' ' | COLOR_PAIR (4));
-						addch ('F' | COLOR_PAIR (4));
+						addch ('|' | COLOR_PAIR (4) | A_BOLD);
+						addch ('>' | COLOR_PAIR (4) | A_BOLD);
 						break;
 					default:
 						addstr ("  ");

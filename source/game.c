@@ -418,7 +418,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	
 	if (isAlive) {
 		overlayMines (&board);
-		printBoardCustom (board, false, 'F' | COLOR_PAIR (4));
+		printBoardCustom (board, false, COLOR_PAIR (4) | A_BOLD);
 		mvprintw (7, hudOffset, "[ %02d/%02d ][ %3.3f ]" , flagsPlaced, qtyMines, timespecToDouble (timeBuffer));
 		mvprintw (8, hudOffset, "[ You won!        ]");
 		refresh ();

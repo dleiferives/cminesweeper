@@ -12,7 +12,7 @@
 
 /* Prints a graphical representation of board, displaying mines as mineChar.
    If hide is true, all squared will be printed as "[]" */
-int printBoardCustom (Board board, bool hide, chtype mineChar);
+int printBoardCustom (Board board, bool hide, chtype mineAttr);
 
 /* printBoard with default arguments for hide and mineChar */
 int printBoard (Board board);
