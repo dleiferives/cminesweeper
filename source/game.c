@@ -1,9 +1,7 @@
 /* game.c */
 
 /* TODO:
-   - add smiley face
-   - delete savefile if player dies
-   - notify player of save error */ 
+   - add smiley face */ 
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -432,6 +430,13 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		printCtrlsyx (0, hudOffset);
 		mvaddstr (8, hudOffset, "You died! Game over.\n");
 		refresh ();
+
+		/* if this game was loaded from a save file, delete that save file */
+		if (saveptr != NULL) {
+			/* this is done so that the player only ever has one chance to play a
+			   particular game; i.e., once you die, you can't try again. */
+			removeSaveFile ("savefile");
+		}
 	}
 
 	freeBoardArray (&board);

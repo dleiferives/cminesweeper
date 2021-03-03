@@ -115,3 +115,12 @@ int loadSaveFile (const char * filename, Savegame * saveptr) {
 
 	return 0;
 }
+
+int removeSaveFile (const char * filename) {
+	char longname[PATH_MAXSIZE];
+	strcpy (longname, getenv (HOME_ENV_NAME));
+	strcat (longname, "/.cminesweeper/");
+	strcat (longname, filename);
+
+	return remove (longname);
+}
