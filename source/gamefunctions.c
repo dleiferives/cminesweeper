@@ -20,10 +20,12 @@ int printBoardCustom (Board board, bool hide, chtype mineChar) {
 	int chars = 0;
 	int x, y;
 
+	/* for every element in the array */
 	for (y = 1; y <= board.height; y++) {
 		mvaddch (y, 0, '|');
 		for (x = 1; x <= board.width; x++) {
 			if (hide) {
+				/* to print hidden board */
 				addch ('[' | COLOR_PAIR (0));
 				addch (']' | COLOR_PAIR (0));
 			} else {
@@ -40,16 +42,17 @@ int printBoardCustom (Board board, bool hide, chtype mineChar) {
 						break;
 					case 'X':
 						if ((mineChar & A_CHARTEXT) == 0) {
-							addch ('@' | COLOR_PAIR (3));
-							addch ('@' | COLOR_PAIR (3));
+							/* if no custom character was provided */
+							addch ('>' | COLOR_PAIR (3) | A_BOLD);
+							addch ('<' | COLOR_PAIR (3) | A_BOLD);
 						} else {
 							addch (' ' | (mineChar & A_ATTRIBUTES));
 							addch (mineChar);
 						}
 						break;
 					case '#':
-						addch ('>' | COLOR_PAIR (3));
-						addch ('<' | COLOR_PAIR (3));
+						addch ('@' | COLOR_PAIR (3) | A_BOLD);
+						addch ('@' | COLOR_PAIR (3) | A_BOLD);
 						break;
 					case 'P':
 						addch (' ' | COLOR_PAIR (3));
@@ -340,7 +343,6 @@ int vmenu (int y, int x, int optc, const char * title, va_list options) {
 		}
 	}
 	
-	curs_set (1); /* cursor visible */
 	free (optionNames);
 	free (optionLengths);
 	return option;

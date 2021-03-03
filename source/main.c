@@ -57,10 +57,10 @@ int main (int argc, char* argv[]) {
 	if (yDim < 1)
 		yDim = 1;
 	/* maxima will be set based on the terminal dimensions */
-	if (2 * xDim + 49 > termWidth)
-		xDim = (termWidth - 49) / 2;
-	if (yDim + 6 > termHeight)
-		yDim = termHeight - 6;
+	if (2 * xDim + 41 > termWidth)
+		xDim = (termWidth - 41) / 2;
+	if (yDim + 2 > termHeight)
+		yDim = termHeight - 2;
 	if (qtyMines < 1)
 		qtyMines = 1;
 	if (qtyMines > xDim * yDim - 1)
