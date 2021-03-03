@@ -42,6 +42,7 @@ int writeSaveFile (const char * filename, Savegame save);
    REMEMBER TO FREE saveptr->gameData AFTER CALLING */
 int loadSaveFile (const char * filename, Savegame * saveptr);
 
+/* removes a savefile from disk */
 int removeSaveFile (const char * filename);
 
 #endif /* SAVEGAME_H */

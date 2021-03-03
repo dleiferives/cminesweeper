@@ -47,8 +47,8 @@ int setGameData (Board board, Savegame * save) {
 
 int writeSaveFile (const char * filename, Savegame save) {
 	/* the full name of the save file */
-	char longname[PATH_MAXSIZE];
-	memset (longname, 0, PATH_MAXSIZE);
+	char longname[PATH_MAXSIZE + 1];
+	memset (longname, 0, PATH_MAXSIZE + 1);
 	strcpy (longname, getenv (HOME_ENV_NAME));
 	strcat (longname, "/.cminesweeper/");
 	strcat (longname, filename);
@@ -71,8 +71,8 @@ int writeSaveFile (const char * filename, Savegame save) {
 
 int loadSaveFile (const char * filename, Savegame * saveptr) {
 	/* the full name of the save file */
-	char longname[PATH_MAXSIZE];
-	memset (longname, 0, PATH_MAXSIZE);
+	char longname[PATH_MAXSIZE + 1];
+	memset (longname, 0, PATH_MAXSIZE + 1);
 	strcpy (longname, getenv (HOME_ENV_NAME));
 	strcat (longname, "/.cminesweeper/");
 	strcat (longname, filename);
@@ -117,7 +117,8 @@ int loadSaveFile (const char * filename, Savegame * saveptr) {
 }
 
 int removeSaveFile (const char * filename) {
-	char longname[PATH_MAXSIZE];
+	char longname[PATH_MAXSIZE + 1];
+	memset (longname, 0, PATH_MAXSIZE + 1);
 	strcpy (longname, getenv (HOME_ENV_NAME));
 	strcat (longname, "/.cminesweeper/");
 	strcat (longname, filename);
