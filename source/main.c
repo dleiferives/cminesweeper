@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <curses.h>
 #include <string.h>	/* strcmp */
 #include <time.h>	/* time */

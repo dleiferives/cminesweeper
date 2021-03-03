@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <curses.h>
 #include <math.h>	/* floorf */
 #include <ctype.h>	/* toupper */

@@ -4,8 +4,8 @@
 /* TODO:
    Remove refresh statement from end of printBoard function */
 
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <stdarg.h>
 #include <stdbool.h>

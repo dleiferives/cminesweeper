@@ -4,9 +4,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h> /* memset */
+
 #include "board.h"
 
-/* allocate memory for array member based on value of dimension members */
 int initBoardArray (Board * board) {
     board->array = (unsigned char **) malloc ((board->width + 2) * sizeof (unsigned char *));
 	for (int i = 0; i < board->width + 2; i++) {
@@ -16,7 +16,6 @@ int initBoardArray (Board * board) {
     return 0;
 }
 
-/* free the memory allocated for the array member */
 int freeBoardArray (Board * board) {
     for (int i = 0; i < board->width + 2; i++)
         free (board->array[i]);

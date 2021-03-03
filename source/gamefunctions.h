@@ -4,7 +4,9 @@
 #ifndef GAMEFUNCTIONS_H
 #define GAMEFUNCTIONS_H
 
-#include <curses.h>
+#include <curses.h> 
+#include <stdarg.h>
+
 #include "board.h"
 #include "savegame.h"
 

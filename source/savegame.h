@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <time.h>	/* timespec */
+
 #include "board.h"
 
 /* masks for extracting bools from gameBools */
