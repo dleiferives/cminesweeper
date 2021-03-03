@@ -37,7 +37,8 @@ int setGameData (Board board, Savegame * saveptr);
 /* write savegame save to disk */
 int writeSaveFile (const char * filename, Savegame save);
 
-/* read savegame from disk into *saveptr;
+/* read savegame from disk into *saveptr, returning -1 if there is an error or if
+   the save file is invalid or has been tampered with;
    REMEMBER TO FREE saveptr->gameData AFTER CALLING */
 int loadSaveFile (const char * filename, Savegame * saveptr);
 

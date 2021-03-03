@@ -1,7 +1,7 @@
 /* savegame.c */
 
 /* TODO:
-   add integrity checking to the savefile I/O functions */
+   count mines when loading savefile */
 
 #include <stdio.h>
 #include <stdint.h>
@@ -83,6 +83,26 @@ int loadSaveFile (const char * filename, Savegame * saveptr) {
 		   sizeof (uint8_t) from the size of the data block, because the last
 		   member in the Savegame struct is actually a pointer. */
 		fread (saveptr, sizeof (Savegame) - sizeof (uint8_t *), 1, savefile);
+
+		/* return an error value if the dimensions of the struct don't make sense */
+		if (saveptr->size != saveptr->width * saveptr->height) {
+			fclose (savefile);
+			return -1;
+		}
+
+		fseek (savefile, 0, SEEK_END);	/* seek to end of file */
+		/* Calculate offset from the end of the file to the file header;
+		   everything between the end of the header and the end of the file is
+		   considered part of the data block. If the size of this block does not
+		   match saveptr->size, then return an error value. */
+		if (ftell (savefile) - (sizeof (Savegame) - sizeof (uint8_t *)) != saveptr->size) {
+			fclose (savefile);
+			return -1;
+		}
+
+		/* The save file has passed the integrity check, so set the position
+		   indicator back to the beginning of the data block */
+		fseek (savefile, sizeof (Savegame) - sizeof (uint8_t *), SEEK_SET);
 		/* allocate the necessary memory */
 		saveptr->gameData = (unsigned char *) malloc (saveptr->size);
 		/* then read the data pointed to by gameData */
@@ -92,5 +112,6 @@ int loadSaveFile (const char * filename, Savegame * saveptr) {
 		/* error opening file */
 		return -1;
 	}
+
 	return 0;
 }

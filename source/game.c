@@ -1,7 +1,6 @@
 /* game.c */
 
 /* TODO:
-   - reposition HUD 
    - add smiley face */ 
 
 #include <stdlib.h>
