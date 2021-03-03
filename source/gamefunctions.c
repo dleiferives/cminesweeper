@@ -40,16 +40,16 @@ int printBoardCustom (Board board, bool hide, chtype mineChar) {
 						break;
 					case 'X':
 						if ((mineChar & A_CHARTEXT) == 0) {
-							addch ('>' | COLOR_PAIR (3));
-							addch ('<' | COLOR_PAIR (3));
+							addch ('@' | COLOR_PAIR (3));
+							addch ('@' | COLOR_PAIR (3));
 						} else {
 							addch (' ' | (mineChar & A_ATTRIBUTES));
 							addch (mineChar);
 						}
 						break;
 					case '#':
-						addch ('@' | COLOR_PAIR (3));
-						addch ('@' | COLOR_PAIR (3));
+						addch ('>' | COLOR_PAIR (3));
+						addch ('<' | COLOR_PAIR (3));
 						break;
 					case 'P':
 						addch (' ' | COLOR_PAIR (3));

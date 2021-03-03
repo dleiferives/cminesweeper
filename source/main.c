@@ -122,6 +122,8 @@ int main (int argc, char* argv[]) {
 		}
 	} else {
 		/* command line arguments were supplied, so don't use a save file */
+		if (savegame.gameData != NULL)
+			free (savegame.gameData);
 		saveptr = NULL;
 	}
 
