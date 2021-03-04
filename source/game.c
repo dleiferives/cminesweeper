@@ -315,6 +315,8 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 						}
 					}
 				}
+			} else {
+				beep ();
 			}
 			break;
 		case ACTION_ESCAPE:
