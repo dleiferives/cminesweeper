@@ -160,6 +160,10 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			/* open menu */
 			action = ACTION_ESCAPE;
 			break;
+		case 'S' & 0x1f: /* Ctrl+S */
+		case 'E':
+			action = ACTION_SAVE;
+			break;
 		case KEY_MOUSE:
 			getmouse (&m_event);
 			cx = m_event.x;
@@ -371,40 +375,17 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 					exitGame = true;
 					break;
 				} else if (buf == 2 || buf == -1) {
-					/* C = cancel, so don't actually exit */
+					/* cancel, so don't actually exit */
 					clear ();
 					break;
 				} else {
 					/* buf == 0 is implied, so fall through to the save game case */
+					action = ACTION_SAVE;
 					exitGame = true;
-					/* no break statement */
 				}
+				break;
 			case MENU_SAVE_GAME:
-				/* save the game */
-				save.size = xDim * yDim;
-				save.width = xDim;
-				save.height = yDim;
-				save.qtyMines = qtyMines;
-				save.flagsPlaced = flagsPlaced;
-				save.gameBools = 0;
-				if (isFlagMode)
-					save.gameBools |= MASK_FLAG_MODE;
-				if (firstClick)
-					save.gameBools |= MASK_FIRST_CLICK;
-				save.cy = cy;
-				save.cx = cx;
-				clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
-				subtractTimespec (&timeBuffer, &timeOffset);
-				save.timeOffset = timeBuffer;
-				setGameData (board, &save);
-
-				buf = writeSaveFile ("savefile", save);
-				if (buf == -1) {
-					/* save error */
-					mvmenu (7, hudOffset, 1, "Error saving game!", "Okay");
-					clear ();
-				}
-				free (save.gameData);
+				action = ACTION_SAVE;
 				break;
 			case MENU_TUTORIAL:
 				tutorial ();
@@ -412,6 +393,34 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 				clear ();
 				break;
 			}
+			if (action != ACTION_SAVE)
+				break;
+		case ACTION_SAVE:
+			/* save the game */
+			save.size = xDim * yDim;
+			save.width = xDim;
+			save.height = yDim;
+			save.qtyMines = qtyMines;
+			save.flagsPlaced = flagsPlaced;
+			save.gameBools = 0;
+			if (isFlagMode)
+				save.gameBools |= MASK_FLAG_MODE;
+			if (firstClick)
+				save.gameBools |= MASK_FIRST_CLICK;
+			save.cy = cy;
+			save.cx = cx;
+			clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
+			subtractTimespec (&timeBuffer, &timeOffset);
+			save.timeOffset = timeBuffer;
+			setGameData (board, &save);
+
+			buf = writeSaveFile ("savefile", save);
+			if (buf == -1) {
+				/* save error */
+				mvmenu (7, hudOffset, 1, "Error saving game!", "Okay");
+				clear ();
+			}
+			free (save.gameData);
 			break;
 		}
 		if (exitGame) break;

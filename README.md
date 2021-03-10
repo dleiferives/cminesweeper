@@ -74,4 +74,5 @@ a right-click)
 - Press the **Spacebar** or **M** to toggle between Normal mode and Flagging mode
 - Press **Q** or **Escape** to open the pause menu
 - Press **R** to start a new game without being prompted first
+- Press **E** or **Ctrl+S** (on some systems) to save your game
 
