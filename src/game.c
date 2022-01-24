@@ -152,6 +152,9 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		nodelay (stdscr, false);
 		Sleep (16); /* sleep 1/60th of a second */
 
+		/* TODO:
+		   Reorder switch cases in an order closer to descending probability */
+		   
 		/* switch to process keystrokes */
 		action = ACTION_NONE;
 		switch (buf) {
@@ -162,6 +165,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			break;
 		case 'S' & 0x1f: /* Ctrl+S */
 		case 'E':
+			/* quicksave */
 			action = ACTION_SAVE;
 			break;
 		case KEY_MOUSE:
@@ -217,6 +221,20 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		case KEY_RIGHT:
 		case 'd':
 			cx += 2;
+			break;
+		/* note capital letters:
+		   player can hold shift to navigate faster */
+		case 'W':
+			cy -= 2;
+			break;
+		case 'S':
+			cy += 2;
+			break;
+		case 'A':
+			cx -= 4;
+			break;
+		case 'D':
+			cx += 4;
 			break;
 		}
 
