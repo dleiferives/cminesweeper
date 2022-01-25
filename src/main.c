@@ -7,9 +7,11 @@
 #include <string.h>	/* strcmp */
 #include <time.h>	/* time */
 
-#include "gamefunctions.h"
+#include "util.h"
 #include "savegame.h"
 #include "splash.h"
+#include "menu.h"
+#include "game.h"
 
 int main(int argc, char* argv[]) {
 	bool gotArgs = false;	/* if the user provided valid command line arguments */

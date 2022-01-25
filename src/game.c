@@ -1,4 +1,8 @@
-/* game.c */
+/*
+ * game.c
+ *
+ * Defines the function that plays the game, called by main.
+ */
 
 /* TODO:
    - add smiley face */ 
@@ -11,9 +15,10 @@
 #include <ctype.h>	/* toupper */
 #include <time.h>	/* timespec, usleep */
 
-#include "gamefunctions.h"
+#include "util.h"
 #include "board.h"
 #include "savegame.h"
+#include "menu.h"
 
 #include <unistd.h>	/* usleep */
 /* use a define statement because usleep isn't portable to windows */

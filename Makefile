@@ -1,5 +1,6 @@
 CC = gcc
-srcfiles = src/main.c src/game.c src/board.c src/gamefunctions.c src/savegame.c
+#srcfiles = src/main.c src/game.c src/board.c src/gamefunctions.c src/savegame.c
+srcfiles = src/*.c
 output = cminesweeper
 
 all: $(srcfiles)
