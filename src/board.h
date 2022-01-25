@@ -13,9 +13,9 @@ typedef struct {
 } Board;
 
 /* allocate memory for array member based on value of dimension members */
-int initBoardArray (Board * board);
+int initBoardArray(Board * board);
 
 /* free the memory allocated for the array member */
-int freeBoardArray (Board * board);
+int freeBoardArray(Board * board);
 
 #endif /* BOARD_H */

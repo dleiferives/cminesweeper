@@ -20,11 +20,11 @@
 #define Sleep(ms) usleep((ms * 1000))
 
 /* timespec utility functions */
-void subtractTimespec (struct timespec * dest, struct timespec * src);	/* adds src to dest */
-void addTimespec (struct timespec * dest, struct timespec * src);		/* subtracts src from dest */
-double timespecToDouble (struct timespec spec);							/* converts a timespec interval to a float value */
+void subtractTimespec(struct timespec * dest, struct timespec * src);	/* adds src to dest */
+void addTimespec(struct timespec * dest, struct timespec * src);		/* subtracts src from dest */
+double timespecToDouble(struct timespec spec);							/* converts a timespec interval to a float value */
 
-int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
+int game(int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	/*** DECLARATIONS ***/
 	
 	int buf;	/* general purpose buffer */
@@ -69,17 +69,17 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		flagsPlaced = save.flagsPlaced;
 		cy = save.cy;
 		cx = save.cx;
-		clock_gettime (CLOCK_MONOTONIC, &timeOffset);		/* set offset to current time */
-		subtractTimespec (&timeOffset, &save.timeOffset);	/* subtract the game duration */
+		clock_gettime(CLOCK_MONOTONIC, &timeOffset);		/* set offset to current time */
+		subtractTimespec(&timeOffset, &save.timeOffset);	/* subtract the game duration */
 		
 		/* then initialize the board */
 		board.width = xDim;
 		board.height = yDim;
 		board.mineCount = qtyMines;
-		initBoardArray (&board);
-		getGameData (&board, save);
+		initBoardArray(&board);
+		getGameData(&board, save);
 		/* finally, remember to free the memory block used in *saveptr */
-		free (saveptr->gameData);
+		free(saveptr->gameData);
 	} else {
 		/* otherwise, use the values passed in the first 3 params: */
 		isFlagMode = false;
@@ -93,8 +93,8 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		board.width = xDim;
 		board.height = yDim;
 		board.mineCount = qtyMines;
-		initBoardArray (&board);
-		initializeMines (&board);
+		initBoardArray(&board);
+		initializeMines(&board);
 	}
 
 	/* set the hudOffset */
@@ -103,54 +103,54 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 
 	/*** BEGIN GAMEPLAY ***/
 
-	noecho ();
-	curs_set (0);	/* cursor invisible */
-	clear ();
+	noecho();
+	curs_set(0);	/* cursor invisible */
+	clear();
 	
 	while (isAlive) {
 		if (!firstClick)
-			clock_gettime (CLOCK_MONOTONIC, &timeOffset);
+			clock_gettime(CLOCK_MONOTONIC, &timeOffset);
 		
 		/* calculate duration of the game */
-		clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
-		subtractTimespec (&timeBuffer, &timeOffset);	/* duration is now stored in timeBuffer */
+		clock_gettime(CLOCK_MONOTONIC, &timeBuffer);
+		subtractTimespec(&timeBuffer, &timeOffset);	/* duration is now stored in timeBuffer */
 		
-		printFrame (board);
-		printCtrlsyx (0, hudOffset);
-		if (allClear (board)) {
+		printFrame(board);
+		printCtrlsyx(0, hudOffset);
+		if (allClear(board)) {
 			/* Break if player has won; note that isAlive is still set to true */
 			break;
 		} else {
 			/* player hasn't won yet */
-			mvprintw (7, hudOffset, "[ %02d/%02d ][ %03d ]", flagsPlaced, qtyMines, (int) floorf (timespecToDouble (timeBuffer)));
-			printBoard (board);
-			mvaddstr (8, hudOffset,
+			mvprintw(7, hudOffset, "[ %02d/%02d ][ %03d ]", flagsPlaced, qtyMines, (int) floorf(timespecToDouble(timeBuffer)));
+			printBoard(board);
+			mvaddstr(8, hudOffset,
 				isFlagMode
 				? "[ Flag mode    ]"
 				: "[ Normal mode  ]"
 			);
-			move (cy, cx);
+			move(cy, cx);
 		}
 
 		/* draw virtual cursor, colored based on the character under it */
 		buf = board.array[x][y] & MASK_CHAR;
-		if (isdigit (buf)) {
+		if (isdigit(buf)) {
 			/* color for numbers */
-			chgat (2, A_REVERSE, 5, NULL);
+			chgat(2, A_REVERSE, 5, NULL);
 		} else if (buf == 'P') {
 			/* color for flags */
-			chgat (2, A_REVERSE, 3, NULL);
+			chgat(2, A_REVERSE, 3, NULL);
 		} else {
 			/* default color */
-			chgat (2, A_REVERSE, 1, NULL);
+			chgat(2, A_REVERSE, 1, NULL);
 		}
-		refresh ();
+		refresh();
 
 		/* get input */
-		nodelay (stdscr, true);
-		buf = getch ();
-		nodelay (stdscr, false);
-		Sleep (16); /* sleep 1/60th of a second */
+		nodelay(stdscr, true);
+		buf = getch();
+		nodelay(stdscr, false);
+		Sleep(16); /* sleep 1/60th of a second */
 
 		/* TODO:
 		   Reorder switch cases in an order closer to descending probability */
@@ -169,7 +169,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			action = ACTION_SAVE;
 			break;
 		case KEY_MOUSE:
-			getmouse (&m_event);
+			getmouse(&m_event);
 			cx = m_event.x;
 			cy = m_event.y;
 
@@ -204,7 +204,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 				: ACTION_FLAG;
 			break;
 		case 'r':
-			freeBoardArray (&board);
+			freeBoardArray(&board);
 			return GAME_RESTART;
 		case KEY_UP:
 		case 'w':
@@ -259,7 +259,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 		y = cy;
 
 		/* check whether player clicked a number */
-		if (isdigit (board.array[x][y]) && (action == ACTION_OPEN || action == ACTION_FLAG))
+		if (isdigit(board.array[x][y]) && (action == ACTION_OPEN || action == ACTION_FLAG))
 			action = ACTION_AUTO;
 		
 		/* switch to do board operations or open menu */
@@ -268,10 +268,10 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 			/* make sure that the player does not die on the first move */
 			if (!firstClick) {
 				buf = 0;
-				while (numMines (board, x, y) > 0 || (board.array[x][y] & MASK_MINE)) {
+				while (numMines(board, x, y) > 0 || (board.array[x][y] & MASK_MINE)) {
 					/* Re-randomize the mines until the current square has 0 neighbors.
 					   This also guarantees that the first square chosen is not a mine. */
-					initializeMines (&board);
+					initializeMines(&board);
 					buf++;
 					if (buf > 100) {
 						/* After 100 tries, simply give up and instead remove the mine at
@@ -280,7 +280,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 						   first square to have 0 neighbors, such as if there are too many
 						   mines in too small a field */
 						board.mineCount--;
-						initializeMines (&board);
+						initializeMines(&board);
 						board.array[x][y] &= ~MASK_MINE;
 						break;
 					}
@@ -293,7 +293,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 				board.array[x][y] &= MASK_MINE; board.array[x][y] |= '#';
 				isAlive = false;
 			} else {
-				openSquares (&board, x, y);
+				openSquares(&board, x, y);
 				firstClick = true;
 			}
 			break;
@@ -327,7 +327,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 						if ((board.array[x + h][y + k] & MASK_CHAR) == '+') {
 							if (!(board.array[x + h][y + k] & MASK_MINE)) {
 								/* if the square is not a mine */
-								openSquares (&board, x + h, y + k);
+								openSquares(&board, x + h, y + k);
 							} else {
 								/* if the square is a mine */
 								isAlive = false;
@@ -338,55 +338,55 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 					}
 				}
 			} else {
-				beep ();
+				beep();
 			}
 			break;
 		case ACTION_ESCAPE:
 			/* open the pause menu */
-			clock_gettime (CLOCK_MONOTONIC, &timeMenu);
+			clock_gettime(CLOCK_MONOTONIC, &timeMenu);
 			
-			printBlank (board);
-			buf = menu (5, "Paused",
+			printBlank(board);
+			buf = menu(5, "Paused",
 				"Return to game ",
 				"New game",
 				"Save game",
 				"Exit game",
 				"View tutorial");
 
-			clear ();
-			printFrame (board);
-			printBlank (board);
-			printCtrlsyx (0, hudOffset);
+			clear();
+			printFrame(board);
+			printBlank(board);
+			printCtrlsyx(0, hudOffset);
 
 			/* increment the time offset by the amount of time spent in menu */
-			clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
-			subtractTimespec (&timeBuffer, &timeMenu);
-			addTimespec (&timeOffset, &timeBuffer);
+			clock_gettime(CLOCK_MONOTONIC, &timeBuffer);
+			subtractTimespec(&timeBuffer, &timeMenu);
+			addTimespec(&timeOffset, &timeBuffer);
 			
 			/* Use the input from menu to decide what to do. Since we will
 			   be prompting the user for input again and it might take time
 			   for them to decide, we will start the menu counter again,
 			   and then proceed to use the input. */
-			clock_gettime (CLOCK_MONOTONIC, &timeMenu);
+			clock_gettime(CLOCK_MONOTONIC, &timeMenu);
 			switch (buf) {
 			case -1:
 			case MENU_NO_INPUT:
 				break;
 			case MENU_RESTART:
 				/* ask user if they really want to restart */
-				buf = mvmenu (7, hudOffset, 2, "Really restart?", "Yes", "No");
-				clear ();
+				buf = mvmenu(7, hudOffset, 2, "Really restart?", "Yes", "No");
+				clear();
 				if (buf == 1) break;
 
-				freeBoardArray (&board);
+				freeBoardArray(&board);
 				return GAME_RESTART;
 			case MENU_EXIT_GAME:
 				/* prompt user to save before exiting */
-				buf = mvmenu (7, hudOffset, 3, "Save before exiting?", "Yes", "No", "Cancel");
+				buf = mvmenu(7, hudOffset, 3, "Save before exiting?", "Yes", "No", "Cancel");
 				
-				clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
-				subtractTimespec (&timeBuffer, &timeMenu);
-				addTimespec (&timeOffset, &timeBuffer);
+				clock_gettime(CLOCK_MONOTONIC, &timeBuffer);
+				subtractTimespec(&timeBuffer, &timeMenu);
+				addTimespec(&timeOffset, &timeBuffer);
 				
 				if (buf == 1) {
 					/* Exit without saving */
@@ -394,7 +394,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 					break;
 				} else if (buf == 2 || buf == -1) {
 					/* cancel, so don't actually exit */
-					clear ();
+					clear();
 					break;
 				} else {
 					/* buf == 0 is implied, so fall through to the save game case */
@@ -406,9 +406,9 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 				action = ACTION_SAVE;
 				break;
 			case MENU_TUTORIAL:
-				tutorial ();
-				curs_set (0);
-				clear ();
+				tutorial();
+				curs_set(0);
+				clear();
 				break;
 			}
 			if (action != ACTION_SAVE)
@@ -427,48 +427,48 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 				save.gameBools |= MASK_FIRST_CLICK;
 			save.cy = cy;
 			save.cx = cx;
-			clock_gettime (CLOCK_MONOTONIC, &timeBuffer);
-			subtractTimespec (&timeBuffer, &timeOffset);
+			clock_gettime(CLOCK_MONOTONIC, &timeBuffer);
+			subtractTimespec(&timeBuffer, &timeOffset);
 			save.timeOffset = timeBuffer;
-			setGameData (board, &save);
+			setGameData(board, &save);
 
-			buf = writeSaveFile ("savefile", save);
+			buf = writeSaveFile("savefile", save);
 			if (buf == -1) {
 				/* save error */
-				mvmenu (7, hudOffset, 1, "Error saving game!", "Okay");
-				clear ();
+				mvmenu(7, hudOffset, 1, "Error saving game!", "Okay");
+				clear();
 			}
-			free (save.gameData);
+			free(save.gameData);
 			break;
 		}
 		if (exitGame) break;
-		refresh ();
+		refresh();
 	}
 	
 	if (isAlive) {
-		overlayMines (&board);
-		printBoardCustom (board, false, COLOR_PAIR (4) | A_BOLD);
-		mvprintw (7, hudOffset, "[ %02d/%02d ][ %3.3f ]" , flagsPlaced, qtyMines, timespecToDouble (timeBuffer));
-		mvprintw (8, hudOffset, "[ You won!        ]");
-		refresh ();
+		overlayMines(&board);
+		printBoardCustom(board, false, COLOR_PAIR(4) | A_BOLD);
+		mvprintw(7, hudOffset, "[ %02d/%02d ][ %3.3f ]" , flagsPlaced, qtyMines, timespecToDouble(timeBuffer));
+		mvprintw(8, hudOffset, "[ You won!        ]");
+		refresh();
 	} else {
-		clear ();
-		overlayMines (&board);
-		printBoard (board);
-		printFrame (board);
-		printCtrlsyx (0, hudOffset);
-		mvaddstr (8, hudOffset, "You died! Game over.\n");
-		refresh ();
+		clear();
+		overlayMines(&board);
+		printBoard(board);
+		printFrame(board);
+		printCtrlsyx(0, hudOffset);
+		mvaddstr(8, hudOffset, "You died! Game over.\n");
+		refresh();
 
 		/* if this game was loaded from a save file, delete that save file */
 		if (saveptr != NULL) {
 			/* this is done so that the player only ever has one chance to play a
 			   particular game; i.e., once you die, you can't try again. */
-			removeSaveFile ("savefile");
+			removeSaveFile("savefile");
 		}
 	}
 
-	freeBoardArray (&board);
+	freeBoardArray(&board);
 	/* if player exited through menu */
 	if (exitGame) return GAME_EXIT;
 	/* GAME_FAILURE and GAME_SUCCESS are set to 0 and 1 respectively, hence why
@@ -476,7 +476,7 @@ int game (int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	else return isAlive;
 }
 
-void subtractTimespec (struct timespec * dest, struct timespec * src) {
+void subtractTimespec(struct timespec * dest, struct timespec * src) {
 	dest->tv_sec -= src->tv_sec;
 	if (dest->tv_nsec - src->tv_nsec < 0) {
 		/* borrow */
@@ -489,7 +489,7 @@ void subtractTimespec (struct timespec * dest, struct timespec * src) {
 	return;
 }
 
-void addTimespec (struct timespec * dest, struct timespec * src) {
+void addTimespec(struct timespec * dest, struct timespec * src) {
 	dest->tv_sec += src->tv_sec;
 	if (dest->tv_nsec + src->tv_nsec > 999999999) {
 		/* carry */
@@ -502,7 +502,7 @@ void addTimespec (struct timespec * dest, struct timespec * src) {
 	return;
 }
 
-double timespecToDouble (struct timespec spec) {
+double timespecToDouble(struct timespec spec) {
 	double result = 0.0;
 	result += spec.tv_sec;
 	result += spec.tv_nsec / 1.0e9;

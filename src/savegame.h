@@ -28,21 +28,21 @@ typedef struct {
 /* prototypes for utility functions */
 
 /* decodes game data from the savegame into the mine and board structs */
-int getGameData (Board * board, Savegame save);
+int getGameData(Board * board, Savegame save);
 
 /* encodes game data from the mine and board structs into the savegame;
    REMEMBER TO FREE saveptr->gameData AFTER CALLING */
-int setGameData (Board board, Savegame * saveptr);
+int setGameData(Board board, Savegame * saveptr);
 
 /* write savegame save to disk */
-int writeSaveFile (const char * filename, Savegame save);
+int writeSaveFile(const char * filename, Savegame save);
 
 /* read savegame from disk into *saveptr, returning -1 if there is an error or if
    the save file is invalid or has been tampered with;
    REMEMBER TO FREE saveptr->gameData AFTER CALLING */
-int loadSaveFile (const char * filename, Savegame * saveptr);
+int loadSaveFile(const char * filename, Savegame * saveptr);
 
 /* removes a savefile from disk */
-int removeSaveFile (const char * filename);
+int removeSaveFile(const char * filename);
 
 #endif /* SAVEGAME_H */

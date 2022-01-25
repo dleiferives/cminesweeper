@@ -11,9 +11,9 @@
 #include "savegame.h"
 #include "splash.h"
 
-int main (int argc, char* argv[]) {
+int main(int argc, char* argv[]) {
 	bool gotArgs = false;	/* if the user provided valid command line arguments */
-	int exitCode = GAME_SUCCESS;	/* status returned by game () */
+	int exitCode = GAME_SUCCESS;	/* status returned by game() */
 	int option;				/* used for user input */
 	int xDim = 9, yDim = 9;	/* dimensions of the game board */
 	int qtyMines = 10;		/* number of mines to play with */
@@ -25,26 +25,26 @@ int main (int argc, char* argv[]) {
 	Savegame * saveptr = &savegame;
 
 	/* loadSaveFile returns -1 if error opening file */
-	bool saveFileExists = (loadSaveFile ("savefile", saveptr) != -1);
-	srand (time (NULL));
-	initscr ();
-	keypad (stdscr, true);
-	noecho ();
+	bool saveFileExists = (loadSaveFile("savefile", saveptr) != -1);
+	srand(time(NULL));
+	initscr();
+	keypad(stdscr, true);
+	noecho();
 	
-	clear ();
+	clear();
 	mmask_t old;
-	mousemask (ALL_MOUSE_EVENTS, &old);
-	addstr (SPLASH);
-	curs_set (0);
+	mousemask(ALL_MOUSE_EVENTS, &old);
+	addstr(SPLASH);
+	curs_set(0);
 	/* press any key to continue */
-	getch ();
-	clear ();
-	refresh ();
+	getch();
+	clear();
+	refresh();
 
-	if (argc >= 5 && strcmp (argv[argc - 4], "custom") == 0) {
-		xDim = atoi (argv[argc - 3]);
-		yDim = atoi (argv[argc - 2]);
-		qtyMines = atoi (argv[argc - 1]);
+	if (argc >= 5 && strcmp(argv[argc - 4], "custom") == 0) {
+		xDim = atoi(argv[argc - 3]);
+		yDim = atoi(argv[argc - 2]);
+		qtyMines = atoi(argv[argc - 1]);
 		gotArgs = true;
 	}
 	
@@ -68,12 +68,12 @@ int main (int argc, char* argv[]) {
 		qtyMines = xDim * yDim - 1;
 
 	/* initialize colors */
-	start_color ();
-	init_pair (1, COLOR_WHITE,	COLOR_BLACK);	/* default pair */
-	init_pair (2, COLOR_BLACK,	COLOR_WHITE);	/* inverted default */
-	init_pair (3, COLOR_RED,	COLOR_BLACK);	/* for exploded mines and wrong flags */
-	init_pair (4, COLOR_GREEN,	COLOR_BLACK);	/* for correct flags and unexploded mines */
-	init_pair (5, COLOR_CYAN,	COLOR_BLACK);	/* for numbers */
+	start_color();
+	init_pair(1, COLOR_WHITE,	COLOR_BLACK);	/* default pair */
+	init_pair(2, COLOR_BLACK,	COLOR_WHITE);	/* inverted default */
+	init_pair(3, COLOR_RED,	COLOR_BLACK);	/* for exploded mines and wrong flags */
+	init_pair(4, COLOR_GREEN,	COLOR_BLACK);	/* for correct flags and unexploded mines */
+	init_pair(5, COLOR_CYAN,	COLOR_BLACK);	/* for numbers */
 
 	/* determine whether to load game or start new game */
 	if (!gotArgs) {
@@ -82,7 +82,7 @@ int main (int argc, char* argv[]) {
 			option = 0;
 		} else {
 			/* otherwise, prompt user */
-			option = menu (2, "Welcome to Minesweeper!", "New game", "Load game");
+			option = menu(2, "Welcome to Minesweeper!", "New game", "Load game");
 			if (option == -1)
 				exitCode = -1;
 		}
@@ -91,7 +91,7 @@ int main (int argc, char* argv[]) {
 			/* user chooses to start new game */
 			saveptr = NULL;
 
-			option = menu (3, "Choose difficulty",
+			option = menu(3, "Choose difficulty",
 				"Beginner    : 9x9, 10 mines",
 				"Intermediate: 16x16, 40 mines ",
 				"Advanced    : 30x24, 99 mines");
@@ -129,7 +129,7 @@ int main (int argc, char* argv[]) {
 	} else {
 		/* command line arguments were supplied, so don't use a save file */
 		if (savegame.gameData != NULL)
-			free (savegame.gameData);
+			free(savegame.gameData);
 		saveptr = NULL;
 	}
 
@@ -141,17 +141,17 @@ int main (int argc, char* argv[]) {
 
 	/* do while exitCode is one of the 4 valid values */
 	while (0 <= exitCode && exitCode <= 4) {
-		clear ();
-		exitCode = game (xDim, yDim, qtyMines, saveptr);
+		clear();
+		exitCode = game(xDim, yDim, qtyMines, saveptr);
 		if (exitCode == GAME_FAILURE || exitCode == GAME_SUCCESS) {
 			/* if player won or lost */
-			option = mvmenu (9, hudOffset, 2, "Play again?", "Yes", "No");
+			option = mvmenu(9, hudOffset, 2, "Play again?", "Yes", "No");
 			
 			if (option != 0)
 				break;
 		} else if (exitCode == GAME_EXIT) {
 			/* if player exited manually */
-			echo ();
+			echo();
 			break;
 		}
 		/* game restart condition requires no special action */
@@ -159,7 +159,7 @@ int main (int argc, char* argv[]) {
 		/* user can only load game on the first run */
 		saveptr = NULL;
 	}
-	echo ();
-	endwin ();
+	echo();
+	endwin();
 	return 0;
 }

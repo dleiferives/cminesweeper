@@ -12,54 +12,54 @@
 
 /* Prints a graphical representation of board, displaying mines as mineChar.
    If hide is true, all squared will be printed as "[]" */
-int printBoardCustom (Board board, bool hide, chtype mineAttr);
+int printBoardCustom(Board board, bool hide, chtype mineAttr);
 
 /* printBoard with default arguments for hide and mineChar */
-int printBoard (Board board);
+int printBoard(Board board);
 
 /* randomize locations of mines on the board */
-int initializeMines (Board * board);
+int initializeMines(Board * board);
 
 /* overlay the locations of mines onto the game board */
-int overlayMines (Board * board);
+int overlayMines(Board * board);
 
 /* returns number of mines adjacent to (x, y) */
-int numMines (Board board, int x, int y);
+int numMines(Board board, int x, int y);
 
 /* recursively uncovers squares on board starting at (x, y) */
-int openSquares (Board * board, int x, int y);
+int openSquares(Board * board, int x, int y);
 
 /* returns true if the minefield has been cleared */
-bool allClear (Board board);
+bool allClear(Board board);
 
 /* returns 0 on game loss, 1 on success, 2 on manual exit, 3 on restart.
    If saveptr is not NULL, then xDim, yDim and qtyMines will be used to 
    initialize the game. */
-int game (int xDim, int yDim, int qtyMines, Savegame * saveptr);
+int game(int xDim, int yDim, int qtyMines, Savegame * saveptr);
 
 /* returns the 0-indexed option chosen by the user */
-int menu (int optc, const char * title, ...);
+int menu(int optc, const char * title, ...);
 
 /* moves the cursor and returns the 0-indexed option chosen by the user */
-int mvmenu (int y, int x, int optc, const char * title, ...);
+int mvmenu(int y, int x, int optc, const char * title, ...);
 
 /* internal va_list menu function */
-int vmenu (int y, int x, int optc, const char * title, va_list options);
+int vmenu(int y, int x, int optc, const char * title, va_list options);
 
 /* play the game tutorial */
-int tutorial ();
+int tutorial();
 
 /* print user controls with the top left corner at (y, x) */
-int printCtrlsyx (int y, int x);
+int printCtrlsyx(int y, int x);
 
 /* printCtrls using default location at (3, 29) */
-int printCtrls ();
+int printCtrls();
 
 /* print a blank game board of dimensions defined in board */
-int printBlank (Board board);
+int printBlank(Board board);
 
 /* prints the top and bottom of the board frame for convenience */
-int printFrame (Board board);
+int printFrame(Board board);
 
 /* macros for game return codes */
 #define GAME_FAILURE	0

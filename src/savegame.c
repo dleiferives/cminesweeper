@@ -16,7 +16,7 @@
 #define HOME_ENV_NAME	"HOME"
 #define PATH_MAXSIZE 	NAME_MAX
 
-int getGameData (Board * board, Savegame save) {
+int getGameData(Board * board, Savegame save) {
 	int outputIndex = 0;
 	int x, y;
 
@@ -30,10 +30,10 @@ int getGameData (Board * board, Savegame save) {
 	return outputIndex;
 }
 
-int setGameData (Board board, Savegame * save) {
+int setGameData(Board board, Savegame * save) {
 	int outputIndex = 0;
 	int x, y;
-	save->gameData = malloc (save->size);
+	save->gameData = malloc(save->size);
 
 	/* iterate through elements on both boards */
 	for (y = 1; y <= board.height; y++) {
@@ -45,23 +45,23 @@ int setGameData (Board board, Savegame * save) {
 	return outputIndex;
 }
 
-int writeSaveFile (const char * filename, Savegame save) {
+int writeSaveFile(const char * filename, Savegame save) {
 	/* the full name of the save file */
 	char longname[PATH_MAXSIZE + 1];
-	memset (longname, 0, PATH_MAXSIZE + 1);
-	strcpy (longname, getenv (HOME_ENV_NAME));
-	strcat (longname, "/.cminesweeper/");
-	strcat (longname, filename);
+	memset(longname, 0, PATH_MAXSIZE + 1);
+	strcpy(longname, getenv(HOME_ENV_NAME));
+	strcat(longname, "/.cminesweeper/");
+	strcat(longname, filename);
 
-	FILE * savefile = fopen (longname, "wb");
+	FILE * savefile = fopen(longname, "wb");
 	if (savefile != NULL) {
 		/* first write the raw struct data. Note that we subtract the value of
-		   sizeof (uint8_t) from the size of the data block, because the last
+		   sizeof(uint8_t) from the size of the data block, because the last
 		   member in the Savegame struct is actually a pointer. */
-		fwrite (&save, sizeof (save) - sizeof (uint8_t *), 1, savefile);
+		fwrite(&save, sizeof(save) - sizeof(uint8_t *), 1, savefile);
 		/* then write the data pointed to by gameData */
-		fwrite (save.gameData, save.size, 1, savefile);
-		fclose (savefile);
+		fwrite(save.gameData, save.size, 1, savefile);
+		fclose(savefile);
 	} else {
 		/* error opening file */
 		return -1;
@@ -69,45 +69,45 @@ int writeSaveFile (const char * filename, Savegame save) {
 	return 0;
 }
 
-int loadSaveFile (const char * filename, Savegame * saveptr) {
+int loadSaveFile(const char * filename, Savegame * saveptr) {
 	/* the full name of the save file */
 	char longname[PATH_MAXSIZE + 1];
-	memset (longname, 0, PATH_MAXSIZE + 1);
-	strcpy (longname, getenv (HOME_ENV_NAME));
-	strcat (longname, "/.cminesweeper/");
-	strcat (longname, filename);
+	memset(longname, 0, PATH_MAXSIZE + 1);
+	strcpy(longname, getenv(HOME_ENV_NAME));
+	strcat(longname, "/.cminesweeper/");
+	strcat(longname, filename);
 
-	FILE * savefile = fopen (longname, "rb");
+	FILE * savefile = fopen(longname, "rb");
 	if (savefile != NULL) {
 		/* first read the raw struct data. Note that we subtract the value of
-		   sizeof (uint8_t) from the size of the data block, because the last
+		   sizeof(uint8_t) from the size of the data block, because the last
 		   member in the Savegame struct is actually a pointer. */
-		fread (saveptr, sizeof (Savegame) - sizeof (uint8_t *), 1, savefile);
+		fread(saveptr, sizeof(Savegame) - sizeof(uint8_t *), 1, savefile);
 
 		/* return an error value if the dimensions of the struct don't make sense */
 		if (saveptr->size != saveptr->width * saveptr->height) {
-			fclose (savefile);
+			fclose(savefile);
 			return -1;
 		}
 
-		fseek (savefile, 0, SEEK_END);	/* seek to end of file */
+		fseek(savefile, 0, SEEK_END);	/* seek to end of file */
 		/* Calculate offset from the end of the file to the file header;
 		   everything between the end of the header and the end of the file is
 		   considered part of the data block. If the size of this block does not
 		   match saveptr->size, then return an error value. */
-		if (ftell (savefile) - (sizeof (Savegame) - sizeof (uint8_t *)) != saveptr->size) {
-			fclose (savefile);
+		if (ftell(savefile) - (sizeof(Savegame) - sizeof(uint8_t *)) != saveptr->size) {
+			fclose(savefile);
 			return -1;
 		}
 
 		/* The save file has passed the integrity check, so set the position
 		   indicator back to the beginning of the data block */
-		fseek (savefile, sizeof (Savegame) - sizeof (uint8_t *), SEEK_SET);
+		fseek(savefile, sizeof(Savegame) - sizeof(uint8_t *), SEEK_SET);
 		/* allocate the necessary memory */
-		saveptr->gameData = (unsigned char *) malloc (saveptr->size);
+		saveptr->gameData = (unsigned char *) malloc(saveptr->size);
 		/* then read the data pointed to by gameData */
-		fread (saveptr->gameData, saveptr->size, 1, savefile);
-		fclose (savefile);
+		fread(saveptr->gameData, saveptr->size, 1, savefile);
+		fclose(savefile);
 	} else {
 		/* error opening file */
 		return -1;
@@ -116,12 +116,12 @@ int loadSaveFile (const char * filename, Savegame * saveptr) {
 	return 0;
 }
 
-int removeSaveFile (const char * filename) {
+int removeSaveFile(const char * filename) {
 	char longname[PATH_MAXSIZE + 1];
-	memset (longname, 0, PATH_MAXSIZE + 1);
-	strcpy (longname, getenv (HOME_ENV_NAME));
-	strcat (longname, "/.cminesweeper/");
-	strcat (longname, filename);
+	memset(longname, 0, PATH_MAXSIZE + 1);
+	strcpy(longname, getenv(HOME_ENV_NAME));
+	strcat(longname, "/.cminesweeper/");
+	strcat(longname, filename);
 
-	return remove (longname);
+	return remove(longname);
 }
