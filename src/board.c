@@ -12,7 +12,7 @@
 #include "util.h"
 #include "board.h"
 
-int initBoardArray(Board * board) {
+int initBoardArray(Board *board) {
     board->array = (unsigned char **) malloc((board->width + 2) * sizeof(unsigned char *));
 	for (int i = 0; i < board->width + 2; i++) {
 		board->array[i] = (unsigned char *) malloc(board->height + 2);
@@ -21,7 +21,7 @@ int initBoardArray(Board * board) {
     return 0;
 }
 
-int freeBoardArray(Board * board) {
+int freeBoardArray(Board *board) {
     for (int i = 0; i < board->width + 2; i++)
         free(board->array[i]);
     free(board->array);
@@ -111,7 +111,7 @@ int printFrame(Board board) {
 	return 0;
 }
 
-int initializeMines(Board * board) {
+int initializeMines(Board *board) {
 	int mineCount = 0;
 	int x, y;
 
@@ -135,7 +135,7 @@ int initializeMines(Board * board) {
 	return mineCount;
 }
 
-int overlayMines(Board * board) {
+int overlayMines(Board *board) {
 	int x, y;
 	for (y = 1; y < board->height + 2; y++) {
 		for (x = 1; x < board->width + 2; x++) {
@@ -171,7 +171,7 @@ int numMines(Board board, int x, int y) {
 	return numOfMines;
 }
 
-int openSquares(Board * board, int x, int y) {
+int openSquares(Board *board, int x, int y) {
 	/* used for relative navigation of the board array */
 	int h, k;
 	int neighbors = 0;

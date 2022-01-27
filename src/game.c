@@ -25,11 +25,11 @@
 #define Sleep(ms) usleep((ms * 1000))
 
 /* timespec utility functions */
-void subtractTimespec(struct timespec * dest, struct timespec * src);	/* adds src to dest */
-void addTimespec(struct timespec * dest, struct timespec * src);		/* subtracts src from dest */
+void subtractTimespec(struct timespec *dest, struct timespec *src);	/* adds src to dest */
+void addTimespec(struct timespec *dest, struct timespec *src);		/* subtracts src from dest */
 double timespecToDouble(struct timespec spec);							/* converts a timespec interval to a float value */
 
-int game(int xDim, int yDim, int qtyMines, Savegame * saveptr) {
+int game(int xDim, int yDim, int qtyMines, Savegame *saveptr) {
 	/*** DECLARATIONS ***/
 	
 	int buf;	/* general purpose buffer */
@@ -481,7 +481,7 @@ int game(int xDim, int yDim, int qtyMines, Savegame * saveptr) {
 	else return isAlive;
 }
 
-void subtractTimespec(struct timespec * dest, struct timespec * src) {
+void subtractTimespec(struct timespec *dest, struct timespec *src) {
 	dest->tv_sec -= src->tv_sec;
 	if (dest->tv_nsec - src->tv_nsec < 0) {
 		/* borrow */
@@ -494,7 +494,7 @@ void subtractTimespec(struct timespec * dest, struct timespec * src) {
 	return;
 }
 
-void addTimespec(struct timespec * dest, struct timespec * src) {
+void addTimespec(struct timespec *dest, struct timespec *src) {
 	dest->tv_sec += src->tv_sec;
 	if (dest->tv_nsec + src->tv_nsec > 999999999) {
 		/* carry */

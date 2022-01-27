@@ -12,7 +12,7 @@
 
 #include "menu.h"
 
-int menu(int optc, const char * title, ...) {
+int menu(int optc, const char *title, ...) {
 	int choice;
 	va_list options;
 	va_start(options, title);
@@ -21,7 +21,7 @@ int menu(int optc, const char * title, ...) {
 	return choice;
 }
 
-int mvmenu(int y, int x, int optc, const char * title, ...) {
+int mvmenu(int y, int x, int optc, const char *title, ...) {
 	int choice;
 	va_list options;
 	va_start(options, title);
@@ -30,13 +30,13 @@ int mvmenu(int y, int x, int optc, const char * title, ...) {
 	return choice;
 }
 
-int vmenu(int y, int x, int optc, const char * title, va_list options) {
+int vmenu(int y, int x, int optc, const char *title, va_list options) {
 	int i, k; /* counting variables */
 	size_t maxLength;
 	/* string array to hold option names */
 	const char ** optionNames = malloc(optc * sizeof(char *));
 	/* array to cache string lengths to avoid calling strlen multiple times */
-	size_t * optionLengths = malloc(optc * sizeof(size_t));
+	size_t *optionLengths = malloc(optc * sizeof(size_t));
 	size_t titleLength;
 
 	/* variables for navigating the menu */

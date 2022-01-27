@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
 
 	/* savegame struct to load game */
 	Savegame savegame;
-	Savegame * saveptr = &savegame;
+	Savegame *saveptr = &savegame;
 
 	/* loadSaveFile returns -1 if error opening file */
 	bool saveFileExists = (loadSaveFile("savefile", saveptr) != -1);

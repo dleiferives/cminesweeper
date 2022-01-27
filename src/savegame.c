@@ -16,7 +16,7 @@
 #define HOME_ENV_NAME	"HOME"
 #define PATH_MAXSIZE 	NAME_MAX
 
-int getGameData(Board * board, Savegame save) {
+int getGameData(Board *board, Savegame save) {
 	int outputIndex = 0;
 	int x, y;
 
@@ -30,7 +30,7 @@ int getGameData(Board * board, Savegame save) {
 	return outputIndex;
 }
 
-int setGameData(Board board, Savegame * save) {
+int setGameData(Board board, Savegame *save) {
 	int outputIndex = 0;
 	int x, y;
 	save->gameData = malloc(save->size);
@@ -45,7 +45,7 @@ int setGameData(Board board, Savegame * save) {
 	return outputIndex;
 }
 
-int writeSaveFile(const char * filename, Savegame save) {
+int writeSaveFile(const char *filename, Savegame save) {
 	/* the full name of the save file */
 	char longname[PATH_MAXSIZE + 1];
 	memset(longname, 0, PATH_MAXSIZE + 1);
@@ -53,7 +53,7 @@ int writeSaveFile(const char * filename, Savegame save) {
 	strcat(longname, "/.cminesweeper/");
 	strcat(longname, filename);
 
-	FILE * savefile = fopen(longname, "wb");
+	FILE *savefile = fopen(longname, "wb");
 	if (savefile != NULL) {
 		/* first write the raw struct data. Note that we subtract the value of
 		   sizeof(uint8_t) from the size of the data block, because the last
@@ -69,7 +69,7 @@ int writeSaveFile(const char * filename, Savegame save) {
 	return 0;
 }
 
-int loadSaveFile(const char * filename, Savegame * saveptr) {
+int loadSaveFile(const char *filename, Savegame *saveptr) {
 	/* the full name of the save file */
 	char longname[PATH_MAXSIZE + 1];
 	memset(longname, 0, PATH_MAXSIZE + 1);
@@ -77,7 +77,7 @@ int loadSaveFile(const char * filename, Savegame * saveptr) {
 	strcat(longname, "/.cminesweeper/");
 	strcat(longname, filename);
 
-	FILE * savefile = fopen(longname, "rb");
+	FILE *savefile = fopen(longname, "rb");
 	if (savefile != NULL) {
 		/* first read the raw struct data. Note that we subtract the value of
 		   sizeof(uint8_t) from the size of the data block, because the last
@@ -116,7 +116,7 @@ int loadSaveFile(const char * filename, Savegame * saveptr) {
 	return 0;
 }
 
-int removeSaveFile(const char * filename) {
+int removeSaveFile(const char *filename) {
 	char longname[PATH_MAXSIZE + 1];
 	memset(longname, 0, PATH_MAXSIZE + 1);
 	strcpy(longname, getenv(HOME_ENV_NAME));
