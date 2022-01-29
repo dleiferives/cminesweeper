@@ -33,26 +33,8 @@ double timespecToDouble(struct timespec spec);							/* converts a timespec inte
    it is saved in *state. game() expects that *state be fully initialized when
    it is called. */
 int game(Savegame *state) {
-	/*** DECLARATIONS ***/
-	
-	int buf;	/* general purpose buffer */
-	
-	/* variables for navigation */
-	int x = 1, y = 1;	/* absolute array coordinates */
-	int h, k;			/* relative array coordinates */
-	int cx, cy;			/* cursor coordinates */
-	int hudOffset;		/* x-offset of where to print the HUD */
-	
-	/* variables storing info about the game state */
-	bool isFlagMode;		/* flag mode is enabled */
-	bool firstClick;		/* the first click of the game has been made */
-	bool isAlive = true;	/* the player is alive */
-	bool exitGame = false;	/* the game is set to exit */
-	int flagsPlaced;		/* number of flags placed */
-	int xDim, yDim;			/* dimensions of the board */
-	int qtyMines;			/* number of mines in play */
-
-	Board board;	/* struct storing the state of the game board */
+	/* not quite sure which scope this one should go in yet, so I'll leave it
+	   here for now */
 	MEVENT m_event;	/* mouse event */
 
 	/* structs for timekeeping */
@@ -60,24 +42,29 @@ int game(Savegame *state) {
 	struct timespec timeMenu;	/* time spent in the menu */
 	struct timespec timeBuffer;	/* buffer used in time calculations */
 
-	/* stores what action will be performed by the game */
-	uint8_t action;
-	
 	/*** INITIALIZATION ***/
 
 	if (state == NULL)
 		return GAME_FAILURE;
 
 	/* start with game status variables */
-	xDim = state->width;
-	yDim = state->height;
-	qtyMines = state-> qtyMines;
+	int xDim = state->width;
+	int yDim = state->height;
+	int qtyMines = state-> qtyMines;	/* number of mines in play */
+
 	clock_gettime(CLOCK_MONOTONIC, &timeOffset);		/* set offset to current time */
 	subtractTimespec(&timeOffset, &state->timeOffset);	/* subtract the game duration */
+
+	Board board;	/* stores the state of the game board */
 	board.width = xDim;
 	board.height = yDim;
 	board.mineCount = qtyMines;
 	initBoardArray(&board);
+
+	int cy, cx;			/* cursor coordinates */
+	bool isFlagMode;	/* flag mode is enabled */
+	bool firstClick;	/* the first click of the game has been made */
+	int flagsPlaced;	/* number of flags placed */
 	if (state->gameData == NULL) {
 		/* defaults for new games */
 		isFlagMode = false;
@@ -99,6 +86,7 @@ int game(Savegame *state) {
 	}
 
 	/* set the hudOffset */
+	int hudOffset;
 	hudOffset = 2 * board.width + 3;
 	if (hudOffset < 18) hudOffset = 18;
 
@@ -108,7 +96,12 @@ int game(Savegame *state) {
 	curs_set(0);	/* cursor invisible */
 	clear();
 	
+	bool isAlive = true;
+	bool exitGameThruMenu = false;
 	while (isAlive) {
+		int x = 1, y = 1;	/* absolute array indices */
+		int h, k;			/* relative array indices */
+		
 		if (!firstClick)
 			clock_gettime(CLOCK_MONOTONIC, &timeOffset);
 		
@@ -118,6 +111,9 @@ int game(Savegame *state) {
 		
 		printFrame(board);
 		printCtrlsyx(0, hudOffset);
+		/* TODO:
+		   Find some method of optimization that avoids calling allClear() if no
+		   changes have been made to the state of the game */
 		if (allClear(board)) {
 			/* Break if player has won; note that isAlive is still set to true */
 			break;
@@ -134,22 +130,24 @@ int game(Savegame *state) {
 		}
 
 		/* draw virtual cursor, colored based on the character under it */
-		buf = board.array[x][y] & MASK_CHAR;
-		if (isdigit(buf)) {
-			/* color for numbers */
-			chgat(2, A_REVERSE, 5, NULL);
-		} else if (buf == 'P') {
-			/* color for flags */
-			chgat(2, A_REVERSE, 3, NULL);
-		} else {
-			/* default color */
-			chgat(2, A_REVERSE, 1, NULL);
+		{
+			unsigned char c = board.array[x][y] & MASK_CHAR;
+			if (isdigit(c)) {
+				/* color for numbers */
+				chgat(2, A_REVERSE, 5, NULL);
+			} else if (c == 'P') {
+				/* color for flags */
+				chgat(2, A_REVERSE, 3, NULL);
+			} else {
+				/* default color */
+				chgat(2, A_REVERSE, 1, NULL);
+			}
 		}
 		refresh();
 
 		/* get input */
 		nodelay(stdscr, true);
-		buf = getch();
+		int input = getch();
 		nodelay(stdscr, false);
 		Sleep(16); /* sleep 1/60th of a second */
 
@@ -157,8 +155,8 @@ int game(Savegame *state) {
 		   Reorder switch cases in an order closer to descending probability */
 		   
 		/* switch to process keystrokes */
-		action = ACTION_NONE;
-		switch (buf) {
+		uint_fast8_t action = ACTION_NONE;	/* action to be performed by the game */
+		switch (input) {
 		case 'q':
 		case 27: /* key code for Esc */
 			/* open menu */
@@ -268,13 +266,13 @@ int game(Savegame *state) {
 		case ACTION_OPEN:
 			/* make sure that the player does not die on the first move */
 			if (!firstClick) {
-				buf = 0;
+				int count = 0;
 				while (numMines(board, x, y) > 0 || (board.array[x][y] & MASK_MINE)) {
 					/* Re-randomize the mines until the current square has 0 neighbors.
 					   This also guarantees that the first square chosen is not a mine. */
 					initializeMines(&board);
-					buf++;
-					if (buf > 100) {
+					count++;
+					if (count > 100) {
 						/* After 100 tries, simply give up and instead remove the mine at
 						   the current coordinate, to avoid locking up the game. This is
 						   done because in some circumstances, it is not possible for the
@@ -312,42 +310,46 @@ int game(Savegame *state) {
 			break;
 		case ACTION_AUTO:
 			/* user selected a square holding a number */
-			buf = 0;
-			/* count number of adjacent flags */
-			for (k = -1; k <= 1; k++) {
-				for (h = -1; h <= 1; h++) {
-					if ((board.array[x + h][y + k] & MASK_CHAR) == 'P')
-						buf++;
-				}
-			}
-			/* if number of adjacent flags == number displayed on square */
-			if (buf == ((board.array[x][y] & MASK_CHAR) - '0')) {
+			{
+				/* something something, labels can only precede statements... */
+				int adjacent = 0;
+				/* count number of adjacent flags */
 				for (k = -1; k <= 1; k++) {
 					for (h = -1; h <= 1; h++) {
-						/* for each adjacent square */
-						if ((board.array[x + h][y + k] & MASK_CHAR) == '+') {
-							if (!(board.array[x + h][y + k] & MASK_MINE)) {
-								/* if the square is not a mine */
-								openSquares(&board, x + h, y + k);
-							} else {
-								/* if the square is a mine */
-								isAlive = false;
-								board.array[x + h][y + k] &= ~MASK_CHAR;
-								board.array[x + h][y + k] |= '#';
+						if ((board.array[x + h][y + k] & MASK_CHAR) == 'P')
+							adjacent++;
+					}
+				}
+				/* if number of adjacent flags == number displayed on square */
+				if (adjacent == ((board.array[x][y] & MASK_CHAR) - '0')) {
+					for (k = -1; k <= 1; k++) {
+						for (h = -1; h <= 1; h++) {
+							/* for each adjacent square */
+							if ((board.array[x + h][y + k] & MASK_CHAR) == '+') {
+								if (!(board.array[x + h][y + k] & MASK_MINE)) {
+									/* if the square is not a mine */
+									openSquares(&board, x + h, y + k);
+								} else {
+									/* if the square is a mine */
+									isAlive = false;
+									board.array[x + h][y + k] &= ~MASK_CHAR;
+									board.array[x + h][y + k] |= '#';
+								}
 							}
 						}
 					}
+				} else {
+					beep();
 				}
-			} else {
-				beep();
 			}
 			break;
 		case ACTION_ESCAPE:
 			/* open the pause menu */
 			clock_gettime(CLOCK_MONOTONIC, &timeMenu);
 			
+			int pauseMenuOption;
 			printBlank(board);
-			buf = menu(5, "Paused",
+			pauseMenuOption = menu(5, "Paused",
 				"Return to game ",
 				"Restart",
 				"Save game",
@@ -369,7 +371,8 @@ int game(Savegame *state) {
 			   for them to decide, we will start the menu counter again,
 			   and then proceed to use the input. */
 			clock_gettime(CLOCK_MONOTONIC, &timeMenu);
-			switch (buf) {
+			
+			switch (pauseMenuOption) {
 			case -1:
 			case 0:
 				/* return to game */
@@ -377,33 +380,39 @@ int game(Savegame *state) {
 			case 1:
 				/* restart */
 				/* ask user if they really want to restart */
-				buf = mvmenu(7, hudOffset, 2, "Really restart?", "Yes", "No");
-				clear();
-				if (buf == 1) break;
+				{
+					int restartMenuOption;
+					restartMenuOption = mvmenu(7, hudOffset, 2, "Really restart?", "Yes", "No");
+					clear();
+					if (restartMenuOption == 1) break;
 
-				freeBoardArray(&board);
-				return GAME_RESTART;
+					freeBoardArray(&board);
+					return GAME_RESTART;
+				}
 			case 3:
 				/* main menu */
 				/* prompt user to save before exiting */
-				buf = mvmenu(7, hudOffset, 3, "Save before exiting?", "Yes", "No", "Cancel");
-				
-				clock_gettime(CLOCK_MONOTONIC, &timeBuffer);
-				subtractTimespec(&timeBuffer, &timeMenu);
-				addTimespec(&timeOffset, &timeBuffer);
-				
-				if (buf == 1) {
-					/* Exit without saving */
-					exitGame = true;
-					break;
-				} else if (buf == 2 || buf == -1) {
-					/* cancel, so don't actually exit */
-					clear();
-					break;
-				} else {
-					/* buf == 0 is implied, so fall through to the save game case */
-					action = ACTION_SAVE;
-					exitGame = true;
+				{
+					int saveMenuOption;
+					saveMenuOption = mvmenu(7, hudOffset, 3, "Save before exiting?", "Yes", "No", "Cancel");
+					
+					clock_gettime(CLOCK_MONOTONIC, &timeBuffer);
+					subtractTimespec(&timeBuffer, &timeMenu);
+					addTimespec(&timeOffset, &timeBuffer);
+					
+					if (saveMenuOption == 1) {
+						/* Exit without saving */
+						exitGameThruMenu = true;
+						break;
+					} else if (saveMenuOption == 2 || saveMenuOption == -1) {
+						/* cancel, so don't actually exit */
+						clear();
+						break;
+					} else {
+						/* buf == 0 is implied, so fall through to the save game case */
+						action = ACTION_SAVE;
+						exitGameThruMenu = true;
+					}
 				}
 				break;
 			case 2:
@@ -438,8 +447,9 @@ int game(Savegame *state) {
 			state->timeOffset = timeBuffer;
 			setGameData(board, state);
 
-			buf = writeSaveFile("savefile", *state);
-			if (buf == -1) {
+			int saveStatus;
+			saveStatus = writeSaveFile("savefile", *state);
+			if (saveStatus == -1) {
 				/* save error */
 				mvmenu(7, hudOffset, 1, "Error saving game!", "I understand");
 				clear();
@@ -447,7 +457,7 @@ int game(Savegame *state) {
 			free(state->gameData);
 			break;
 		}
-		if (exitGame) break;
+		if (exitGameThruMenu) break;
 		refresh();
 	}
 	
@@ -479,7 +489,7 @@ int game(Savegame *state) {
 
 	freeBoardArray(&board);
 	/* if player exited through menu */
-	if (exitGame) return GAME_EXIT;
+	if (exitGameThruMenu) return GAME_EXIT;
 	/* GAME_FAILURE and GAME_SUCCESS are set to 0 and 1 respectively, hence why
 	   returning the state of isAlive works. */
 	return isAlive;
