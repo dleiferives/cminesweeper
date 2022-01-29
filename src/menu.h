@@ -8,10 +8,11 @@
 #ifndef MENU_H
 #define MENU_H
 
-/* returns the 0-indexed option chosen by the user */
+/* returns the 0-indexed option chosen by the user, or -1 if exit */
 int menu(int optc, const char *title, ...);
 
-/* moves the cursor and returns the 0-indexed option chosen by the user */
+/* moves the cursor and returns the 0-indexed option chosen by the user, or
+   -1 if exit */
 int mvmenu(int y, int x, int optc, const char *title, ...);
 
 /* internal va_list menu function */

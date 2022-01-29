@@ -39,7 +39,7 @@ int writeSaveFile(const char *filename, Savegame save);
 
 /* read savegame from disk into *saveptr, returning -1 if there is an error or if
    the save file is invalid or has been tampered with;
-   REMEMBER TO FREE saveptr->gameData AFTER CALLING */
+   REMEMBER TO FREE saveptr->gameData after moving it to a Board object */
 int loadSaveFile(const char *filename, Savegame *saveptr);
 
 /* removes a savefile from disk */

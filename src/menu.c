@@ -34,7 +34,7 @@ int vmenu(int y, int x, int optc, const char *title, va_list options) {
 	int i, k; /* counting variables */
 	size_t maxLength;
 	/* string array to hold option names */
-	const char ** optionNames = malloc(optc * sizeof(char *));
+	const char **optionNames = malloc(optc * sizeof(char *));
 	/* array to cache string lengths to avoid calling strlen multiple times */
 	size_t *optionLengths = malloc(optc * sizeof(size_t));
 	size_t titleLength;

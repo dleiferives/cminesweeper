@@ -29,7 +29,10 @@ void subtractTimespec(struct timespec *dest, struct timespec *src);	/* adds src 
 void addTimespec(struct timespec *dest, struct timespec *src);		/* subtracts src from dest */
 double timespecToDouble(struct timespec spec);							/* converts a timespec interval to a float value */
 
-int game(int xDim, int yDim, int qtyMines, Savegame *saveptr) {
+/* game() will always work beginning from a saved state. When the game is saved,
+   it is saved in *state. game() expects that *state be fully initialized when
+   it is called. */
+int game(Savegame *state) {
 	/*** DECLARATIONS ***/
 	
 	int buf;	/* general purpose buffer */
@@ -46,8 +49,9 @@ int game(int xDim, int yDim, int qtyMines, Savegame *saveptr) {
 	bool isAlive = true;	/* the player is alive */
 	bool exitGame = false;	/* the game is set to exit */
 	int flagsPlaced;		/* number of flags placed */
+	int xDim, yDim;			/* dimensions of the board */
+	int qtyMines;			/* number of mines in play */
 
-	Savegame save;	/* savegame object */
 	Board board;	/* struct storing the state of the game board */
 	MEVENT m_event;	/* mouse event */
 
@@ -61,45 +65,37 @@ int game(int xDim, int yDim, int qtyMines, Savegame *saveptr) {
 	
 	/*** INITIALIZATION ***/
 
-	if (saveptr != NULL) {
-		/* if a valid Savegame pointer was passed, initialize
-		   game based on the contents of that structure */
-		save = *saveptr;
-		/* start with game status variables */
-		xDim = save.width;
-		yDim = save.height;
-		qtyMines = save. qtyMines;
-		isFlagMode = ((save.gameBools & MASK_FLAG_MODE) != 0);
-		firstClick = ((save.gameBools & MASK_FIRST_CLICK) != 0);
-		flagsPlaced = save.flagsPlaced;
-		cy = save.cy;
-		cx = save.cx;
-		clock_gettime(CLOCK_MONOTONIC, &timeOffset);		/* set offset to current time */
-		subtractTimespec(&timeOffset, &save.timeOffset);	/* subtract the game duration */
-		
-		/* then initialize the board */
-		board.width = xDim;
-		board.height = yDim;
-		board.mineCount = qtyMines;
-		initBoardArray(&board);
-		getGameData(&board, save);
-		/* finally, remember to free the memory block used in *saveptr */
-		free(saveptr->gameData);
-	} else {
-		/* otherwise, use the values passed in the first 3 params: */
+	if (state == NULL)
+		return GAME_FAILURE;
+
+	/* start with game status variables */
+	xDim = state->width;
+	yDim = state->height;
+	qtyMines = state-> qtyMines;
+	clock_gettime(CLOCK_MONOTONIC, &timeOffset);		/* set offset to current time */
+	subtractTimespec(&timeOffset, &state->timeOffset);	/* subtract the game duration */
+	board.width = xDim;
+	board.height = yDim;
+	board.mineCount = qtyMines;
+	initBoardArray(&board);
+	if (state->gameData == NULL) {
+		/* defaults for new games */
 		isFlagMode = false;
-		flagsPlaced = 0;
 		firstClick = false;
-		/* cursor will be initialized at top left of game board */
-		cy = 1, cx = 1;
-		timeOffset.tv_sec = 0;
-		timeOffset.tv_nsec = 0;
-		/* initialize the boards */
-		board.width = xDim;
-		board.height = yDim;
-		board.mineCount = qtyMines;
-		initBoardArray(&board);
+		flagsPlaced = 0;
+		cy = 1;
+		cx = 1;
 		initializeMines(&board);
+	} else {
+		/* only do this if gameData was initialized from a previous save file */
+		isFlagMode = ((state->gameBools & MASK_FLAG_MODE) != 0);
+		firstClick = ((state->gameBools & MASK_FIRST_CLICK) != 0);
+		flagsPlaced = state->flagsPlaced;
+		cy = state->cy;
+		cx = state->cx;
+		getGameData(&board, *state);
+		free(state->gameData);
+		state->gameData = NULL;
 	}
 
 	/* set the hudOffset */
@@ -353,9 +349,9 @@ int game(int xDim, int yDim, int qtyMines, Savegame *saveptr) {
 			printBlank(board);
 			buf = menu(5, "Paused",
 				"Return to game ",
-				"New game",
+				"Restart",
 				"Save game",
-				"Exit game",
+				"Main menu",
 				"View tutorial");
 
 			clear();
@@ -375,9 +371,11 @@ int game(int xDim, int yDim, int qtyMines, Savegame *saveptr) {
 			clock_gettime(CLOCK_MONOTONIC, &timeMenu);
 			switch (buf) {
 			case -1:
-			case MENU_NO_INPUT:
+			case 0:
+				/* return to game */
 				break;
-			case MENU_RESTART:
+			case 1:
+				/* restart */
 				/* ask user if they really want to restart */
 				buf = mvmenu(7, hudOffset, 2, "Really restart?", "Yes", "No");
 				clear();
@@ -385,7 +383,8 @@ int game(int xDim, int yDim, int qtyMines, Savegame *saveptr) {
 
 				freeBoardArray(&board);
 				return GAME_RESTART;
-			case MENU_EXIT_GAME:
+			case 3:
+				/* main menu */
 				/* prompt user to save before exiting */
 				buf = mvmenu(7, hudOffset, 3, "Save before exiting?", "Yes", "No", "Cancel");
 				
@@ -407,10 +406,12 @@ int game(int xDim, int yDim, int qtyMines, Savegame *saveptr) {
 					exitGame = true;
 				}
 				break;
-			case MENU_SAVE_GAME:
+			case 2:
+				/* save game */
 				action = ACTION_SAVE;
 				break;
-			case MENU_TUTORIAL:
+			case 4:
+				/* tutorial */
 				tutorial();
 				curs_set(0);
 				clear();
@@ -420,30 +421,30 @@ int game(int xDim, int yDim, int qtyMines, Savegame *saveptr) {
 				break;
 		case ACTION_SAVE:
 			/* save the game */
-			save.size = xDim * yDim;
-			save.width = xDim;
-			save.height = yDim;
-			save.qtyMines = qtyMines;
-			save.flagsPlaced = flagsPlaced;
-			save.gameBools = 0;
+			state->size = xDim * yDim;
+			state->width = xDim;
+			state->height = yDim;
+			state->qtyMines = qtyMines;
+			state->flagsPlaced = flagsPlaced;
+			state->gameBools = 0;
 			if (isFlagMode)
-				save.gameBools |= MASK_FLAG_MODE;
+				state->gameBools |= MASK_FLAG_MODE;
 			if (firstClick)
-				save.gameBools |= MASK_FIRST_CLICK;
-			save.cy = cy;
-			save.cx = cx;
+				state->gameBools |= MASK_FIRST_CLICK;
+			state->cy = cy;
+			state->cx = cx;
 			clock_gettime(CLOCK_MONOTONIC, &timeBuffer);
 			subtractTimespec(&timeBuffer, &timeOffset);
-			save.timeOffset = timeBuffer;
-			setGameData(board, &save);
+			state->timeOffset = timeBuffer;
+			setGameData(board, state);
 
-			buf = writeSaveFile("savefile", save);
+			buf = writeSaveFile("savefile", *state);
 			if (buf == -1) {
 				/* save error */
-				mvmenu(7, hudOffset, 1, "Error saving game!", "Okay");
+				mvmenu(7, hudOffset, 1, "Error saving game!", "I understand");
 				clear();
 			}
-			free(save.gameData);
+			free(state->gameData);
 			break;
 		}
 		if (exitGame) break;
@@ -466,10 +467,13 @@ int game(int xDim, int yDim, int qtyMines, Savegame *saveptr) {
 		refresh();
 
 		/* if this game was loaded from a save file, delete that save file */
-		if (saveptr != NULL) {
+		if (state != NULL) {
 			/* this is done so that the player only ever has one chance to play a
 			   particular game; i.e., once you die, you can't try again. */
-			removeSaveFile("savefile");
+			//removeSaveFile("savefile");
+			/* TODO:
+			   Find a way to delete the save file at the end of a game, ONLY if
+			   the current game was from a save file. */
 		}
 	}
 
@@ -478,7 +482,7 @@ int game(int xDim, int yDim, int qtyMines, Savegame *saveptr) {
 	if (exitGame) return GAME_EXIT;
 	/* GAME_FAILURE and GAME_SUCCESS are set to 0 and 1 respectively, hence why
 	   returning the state of isAlive works. */
-	else return isAlive;
+	return isAlive;
 }
 
 void subtractTimespec(struct timespec *dest, struct timespec *src) {
