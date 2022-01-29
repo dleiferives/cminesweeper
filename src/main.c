@@ -88,9 +88,10 @@ int main(int argc, char* argv[]) {
 		Savegame savegame;
 
 		clear();
-		mainMenuOption = menu(3, "Main menu",
+		mainMenuOption = menu(4, "Main menu",
 			"New game...",
 			"Load game",
+			"Clear saved game...",
 			"Exit");
 		
 		switch (mainMenuOption) {
@@ -135,8 +136,23 @@ int main(int argc, char* argv[]) {
 			}
 			/* otherwise, loading was successful and we can continue */
 			break;
+		case 2:
+			/* clear savefile */
+			{
+				int clearSaveFile;
+				clearSaveFile = menu(2, "Really clear saved game?", "Yes", "No");
+				if (clearSaveFile == 0) {
+					/* delete it ! */
+					int status = removeSaveFile("savefile");
+					if (status != 0)
+						mvmenu(6, 0, 1, "No save file exists", "I understand");
+					else
+						mvmenu(6, 0, 1, "Saved game cleared", "I have no regrets");
+				}
+			}
+			continue;
 		case -1:
-			mainMenuOption = 2;
+			mainMenuOption = 3;
 		}
 
 		/* calculate HUD offset */
@@ -145,7 +161,7 @@ int main(int argc, char* argv[]) {
 		if (hudOffset < 18) hudOffset = 18;
 
 		/* game time, using whatever Savegame was set up in the last step */
-		if (mainMenuOption != 2) {
+		if (mainMenuOption != 3) {
 			/* keep playing while player wants to */
 			int exitCode;
 			do {
@@ -163,7 +179,7 @@ int main(int argc, char* argv[]) {
 				}
 			} while (exitCode != GAME_EXIT);
 		}
-	} while (mainMenuOption != 2);
+	} while (mainMenuOption != 3);
 	
 	echo();
 	endwin();

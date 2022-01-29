@@ -63,7 +63,7 @@ int vmenu(int y, int x, int optc, const char *title, va_list options) {
 
 	curs_set(0); /* cursor invisible */
 
-	while (!gotInput) {
+	do {
 		/* print the menu */
 		/* start with top of border */
 		mvprintw(y, x, "+= %s ", title);
@@ -133,9 +133,11 @@ int vmenu(int y, int x, int optc, const char *title, va_list options) {
 			/* return or enter */
 			gotInput = true;
 		}
-	}
+	} while (!gotInput); 
 	
 	free(optionNames);
 	free(optionLengths);
+	/* un-blink the option cursor */
+	mvchgat(y + option + 2, x + 5, 1, A_NORMAL, 1, NULL);
 	return option;
 }
