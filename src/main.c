@@ -124,6 +124,9 @@ int main(int argc, char* argv[]) {
 					savegame.qtyMines = 99;
 					break;
 				}
+				/* gameData should always be set to NULL when a new game is to
+				   be initialized */
+				savegame.gameData = NULL;
 			}
 			break;
 		case 1:
