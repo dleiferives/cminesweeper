@@ -101,26 +101,25 @@ int main(int argc, char* argv[]) {
 					{
 						int termWidth, termHeight;
 						getmaxyx(stdscr, termHeight, termWidth);
-
-						clear();
-						do {
-							savegame.width = mvpromptInt(0, 0, "Width:         ");
-							mvprintw(22, 0, "%d", savegame.width);
-						} while (savegame.width < 2 || savegame.width > (termWidth - 41) / 2);
-
-						do {
-							savegame.height = mvpromptInt(4, 0, "Height         ");
-						} while (savegame.height < 2 || savegame.height > (termHeight - 2));
-
-						do {
-							savegame.qtyMines = mvpromptInt(8, 0, "Number of mines");
-						} while ( savegame.qtyMines < 0		/* the - 2 below is arbitrary */
-								|| savegame.qtyMines > savegame.height * savegame.width - 2);
-
 						int useDimensions;
-						useDimensions = mvmenu(0, 20, 2, "Use these dimensions?", "Yes", "No");
-						if (useDimensions != 0)
-							continue;
+						do {
+							clear();
+							do savegame.width = mvpromptInt(0, 0, "Width:         ");
+							while (savegame.width < 2 || savegame.width > (termWidth - 41) / 2);
+
+							do savegame.height = mvpromptInt(4, 0, "Height         ");
+							while (savegame.height < 2 || savegame.height > (termHeight - 2));
+
+							do savegame.qtyMines = mvpromptInt(8, 0, "Number of mines");
+							while ( savegame.qtyMines < 0		/* the - 2 below is arbitrary */
+									|| savegame.qtyMines > savegame.height * savegame.width - 2 );
+
+							useDimensions = mvmenu(0, 20, 3, "Use these dimensions?",
+								"Yes",
+								"No",
+								"Main menu");
+						} while (useDimensions == 1);
+						if (useDimensions == 2) continue;
 					}
 				}
 				/* gameData should always be set to NULL when a new game is to
