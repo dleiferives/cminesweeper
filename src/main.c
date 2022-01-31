@@ -88,22 +88,33 @@ int main(int argc, char* argv[]) {
 		Savegame savegame;
 
 		clear();
+
+#ifndef CMINESWEEPER_DEBUG
 		mainMenuOption = menu(4, "Main menu",
 			"New game...",
 			"Load game",
 			"Clear saved game...",
 			"Exit");
-		
+#else
+		mainMenuOption = menu(5, "Main menu",
+			"New game...",
+			"Load game",
+			"Clear saved game...",
+			"Exit",
+			"Debug menu...");
+#endif	/* CMINESWEEPER_DEBUG */
+
 		switch (mainMenuOption) {
 		case 0:
 			/* user chooses to start new game */
 			/* labels can only precede statements, so we use a compound statement */
 			{
 				int difficulty;
-				difficulty = menu(3, "Choose difficulty",
+				difficulty = menu(4, "Choose difficulty",
 					"Beginner    : 9x9, 10 mines",
 					"Intermediate: 16x16, 40 mines ",
-					"Advanced    : 30x24, 99 mines");
+					"Advanced    : 30x24, 99 mines",
+					"Custom dimensions...");
 
 				switch (difficulty) {
 				case -1:
@@ -113,6 +124,7 @@ int main(int argc, char* argv[]) {
 					savegame.height = 9;
 					savegame.qtyMines = 10;
 					break;
+				default:
 				case 1:
 					savegame.width = 16;
 					savegame.height = 16;
@@ -123,6 +135,9 @@ int main(int argc, char* argv[]) {
 					savegame.height = 24;
 					savegame.qtyMines = 99;
 					break;
+				case 3:
+					/* custom dimensions */
+
 				}
 				/* gameData should always be set to NULL when a new game is to
 				   be initialized */
@@ -154,6 +169,29 @@ int main(int argc, char* argv[]) {
 				}
 			}
 			continue;
+
+#ifdef CMINESWEEPER_DEBUG
+		case 4:
+			/* debug menu */
+			{
+				int the = mvpromptInt(0, 0, "The");
+				mvprintw(15, 0, "%d\n", the);
+				getch();
+				clear();
+
+				the = mvpromptInt(1, 1, NULL);
+				mvprintw(15, 0, "%d\n", the);
+				getch();
+				clear();
+
+				the = mvpromptInt(8, 4, "Some really impractically long string");
+				mvprintw(15, 0, "%d\n", the);
+				getch();
+				clear();
+			}
+			continue;
+#endif	/* CMINESWEEPER_DEBUG */
+
 		case -1:
 			mainMenuOption = 3;
 		}

@@ -18,4 +18,10 @@ int mvmenu(int y, int x, int optc, const char *title, ...);
 /* internal va_list menu function */
 int vmenu(int y, int x, int optc, const char *title, va_list options);
 
+/* prompt the user for an integer */
+int mvpromptInt(int y, int x, const char *prompt);
+
+/* prompt the user for an integer */
+int promptInt(const char *prompt);
+
 #endif /* MENU_H */

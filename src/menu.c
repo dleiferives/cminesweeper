@@ -141,3 +141,71 @@ int vmenu(int y, int x, int optc, const char *title, va_list options) {
 	mvchgat(y + option + 2, x + 5, 1, A_NORMAL, 1, NULL);
 	return option;
 }
+
+int mvpromptInt(int y, int x, const char *prompt) {
+	size_t width;
+	int i;
+
+	if (prompt != NULL) {
+		size_t length = strlen(prompt);
+		/* width = max(length, 7) */
+		width = (length < 7)
+			? 7
+			: length;
+	} else {
+		width = 7;
+	}
+	
+	/* draw the box */
+	mvaddstr(y++, x, "+=");
+	for (i = 0; i < width; ++i)
+		addch('=');
+	addstr("=+");
+
+	if (prompt != NULL)
+		mvprintw(y++, x, "| %-7s |", prompt);
+	
+	mvaddstr(y++, x, "| [");
+	for (i = 0; i < width - 2; ++i)
+		addch(' ');
+	addstr("] |");
+
+	mvaddstr(y--, x, "+=");
+	for (i = 0; i < width; ++i)
+		addch('=');
+	addstr("=+");
+
+	/* the interactive part */
+	nodelay(stdscr, false);
+	move(y, 3 + x);
+	curs_set(2);
+	refresh();
+
+	char input[5];
+	int index = 0;
+	int key;
+	do {
+		key = getch();
+		if (index < 4) {
+			if ( ('0' <= key && key <= '9') || key == '-' ) {
+				input[index++] = key;
+				addch(key);
+			} else if (key == KEY_BACKSPACE && index > 0) {
+				--index;
+				addstr("\b \b");
+			}
+		} else if (index == 4) {
+			if (key == KEY_BACKSPACE) {
+				--index;
+				addstr("\b \b");
+			}
+		}
+	} while (key != '\n');
+	input[index] = '\0';
+
+	return atoi(input);
+}
+
+int promptInt(const char *prompt) {
+	return mvpromptInt(0, 0, prompt);
+}

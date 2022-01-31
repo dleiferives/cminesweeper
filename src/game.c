@@ -27,7 +27,7 @@
 /* timespec utility functions */
 void subtractTimespec(struct timespec *dest, struct timespec *src);	/* adds src to dest */
 void addTimespec(struct timespec *dest, struct timespec *src);		/* subtracts src from dest */
-double timespecToDouble(struct timespec spec);							/* converts a timespec interval to a float value */
+double timespecToDouble(struct timespec spec);						/* converts a timespec interval to a float value */
 
 /* game() will always work beginning from a saved state. When the game is saved,
    it is saved in *state. game() expects that *state be fully initialized when

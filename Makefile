@@ -5,8 +5,8 @@ output = cminesweeper
 
 all: $(srcfiles)
 	$(CC) -o $(output) -Isrc $(srcfiles) -lncurses -lm
-	mkdir -p $(HOME)/.cminesweeper
+	@mkdir -p $(HOME)/.cminesweeper
 
 debug: $(srcfiles)
-	$(CC) -o $(output) -Isrc -g -rdynamic -ggdb3 -Wall $(srcfiles) -lncurses -lm
+	$(CC) -o $(output) -Isrc -g -rdynamic -ggdb3 -DCMINESWEEPER_DEBUG -Wall $(srcfiles) -lncurses -lm
 	mkdir -p $(HOME)/.cminesweeper
