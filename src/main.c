@@ -31,45 +31,6 @@ int main(int argc, char* argv[]) {
 	getch();
 	clear();
 	refresh();
-	
-	/* This part is exclusive to custom command line dimensions. We will revisit
-	   this in a later revision of the game. */
-#if 0
-	{
-		/* NOTE:
-		Command line argument support is currently not supported. */
-		bool gotArgs = false;	/* if the user provided valid command line arguments */
-		int xDim = 9, yDim = 9;	/* dimensions of the game board */
-		int qtyMines = 10;		/* number of mines to play with */
-
-		if (argc >= 5 && strcmp(argv[argc - 4], "custom") == 0) {
-			xDim = atoi(argv[argc - 3]);
-			yDim = atoi(argv[argc - 2]);
-			qtyMines = atoi(argv[argc - 1]);
-			gotArgs = true;
-		}
-
-		int termWidth, termHeight;
-		/* get terminal dimensions */
-		getmaxyx(stdscr, termHeight, termWidth);
-
-		/* set upper and lower limits for acceptable dimensions */
-		/* minimum dimension is always 1 */
-		if (xDim < 1)
-			xDim = 1;
-		if (yDim < 1)
-			yDim = 1;
-		/* maxima will be set based on the terminal dimensions */
-		if (2 * xDim + 41 > termWidth)
-			xDim = (termWidth - 41) / 2;
-		if (yDim + 2 > termHeight)
-			yDim = termHeight - 2;
-		if (qtyMines < 1)
-			qtyMines = 1;
-		if (qtyMines > xDim * yDim - 1)
-			qtyMines = xDim * yDim - 1;
-	}
-#endif 
 
 	/* initialize colors */
 	start_color();
@@ -137,7 +98,30 @@ int main(int argc, char* argv[]) {
 					break;
 				case 3:
 					/* custom dimensions */
+					{
+						int termWidth, termHeight;
+						getmaxyx(stdscr, termHeight, termWidth);
 
+						clear();
+						do {
+							savegame.width = mvpromptInt(0, 0, "Width:         ");
+							mvprintw(22, 0, "%d", savegame.width);
+						} while (savegame.width < 2 || savegame.width > (termWidth - 41) / 2);
+
+						do {
+							savegame.height = mvpromptInt(4, 0, "Height         ");
+						} while (savegame.height < 2 || savegame.height > (termHeight - 2));
+
+						do {
+							savegame.qtyMines = mvpromptInt(8, 0, "Number of mines");
+						} while ( savegame.qtyMines < 0		/* the - 2 below is arbitrary */
+								|| savegame.qtyMines > savegame.height * savegame.width - 2);
+
+						int useDimensions;
+						useDimensions = mvmenu(0, 20, 2, "Use these dimensions?", "Yes", "No");
+						if (useDimensions != 0)
+							continue;
+					}
 				}
 				/* gameData should always be set to NULL when a new game is to
 				   be initialized */

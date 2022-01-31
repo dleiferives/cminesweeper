@@ -142,6 +142,8 @@ int vmenu(int y, int x, int optc, const char *title, va_list options) {
 	return option;
 }
 
+/* TODO:
+   allow user to exit the prompt using Q (may require changing parameters) */
 int mvpromptInt(int y, int x, const char *prompt) {
 	size_t width;
 	int i;
