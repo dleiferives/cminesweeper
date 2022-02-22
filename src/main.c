@@ -200,6 +200,9 @@ int main(int argc, char* argv[]) {
 						/* Don't play again, go to the menu. */
 						exitCode = GAME_EXIT;
 					}
+
+					/* otherwise, set gameData to NULL before a new game */
+					savegame.gameData = NULL;
 				}
 			} while (exitCode != GAME_EXIT);
 		}
